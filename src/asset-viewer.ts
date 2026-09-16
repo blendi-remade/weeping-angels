@@ -1,0 +1,14 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { loadAngels } from './angels';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x293137);
+const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,.02,50);camera.position.set(.2,1.65,5.2);
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);r.setPixelRatio(Math.min(devicePixelRatio,1.5));r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.2;document.body.append(r.domElement);
+const c=new OrbitControls(camera,r.domElement);c.target.set(0,1.4,0);c.update();scene.add(new THREE.HemisphereLight(0xcbd5e1,0x544538,1.5));
+const key=new THREE.DirectionalLight(0xffebcd,3);key.position.set(-3,5,4);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);const rim=new THREE.DirectionalLight(0x9bcaff,2);rim.position.set(2,3,-3);scene.add(rim);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0x313940,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const angels=await loadAngels(scene);angels[0].group.position.set(0,0,0);angels[1].group.visible=false;
+document.querySelectorAll<HTMLButtonElement>('[data-pose]').forEach(b=>b.onclick=()=>angels[0].setPose(Number(b.dataset.pose)));
+(window as any).__asset={angel:angels[0],camera,scene,THREE,controls:c};
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();r.setSize(innerWidth,innerHeight);});
+function frame(){requestAnimationFrame(frame);r.render(scene,camera);}frame();

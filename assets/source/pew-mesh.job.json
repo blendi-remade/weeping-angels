@@ -1,0 +1,21 @@
+{
+  "endpoint": "meshy/v7/image-to-3d",
+  "input": {
+    "image_url": "https://v3b.fal.media/files/b/0aaa9745/kE9hK9U_8MLWB85F4vpx5_v6gPpF2w.png",
+    "model_type": "standard",
+    "ultra_mode": true,
+    "enable_pbr": true,
+    "should_remesh": true,
+    "target_polycount": 40000,
+    "should_texture": true,
+    "enable_rigging": false
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0a7b5-ea4e-76d0-990e-e3d550ec05b4",
+  "response_url": "https://queue.fal.run/meshy/v7/requests/01a0a7b5-ea4e-76d0-990e-e3d550ec05b4",
+  "status_url": "https://queue.fal.run/meshy/v7/requests/01a0a7b5-ea4e-76d0-990e-e3d550ec05b4/status",
+  "cancel_url": "https://queue.fal.run/meshy/v7/requests/01a0a7b5-ea4e-76d0-990e-e3d550ec05b4/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}

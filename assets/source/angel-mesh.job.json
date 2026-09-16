@@ -1,0 +1,26 @@
+{
+  "endpoint": "meshy/v7/image-to-3d",
+  "input": {
+    "image_url": "https://v3b.fal.media/files/b/0aaa96da/6V3YLVtBXLH-ImsGZvkqv_ioPIaE2t.png",
+    "model_type": "standard",
+    "ultra_mode": true,
+    "enable_pbr": true,
+    "should_texture": true,
+    "should_remesh": true,
+    "target_polycount": 100000,
+    "topology": "triangle",
+    "symmetry_mode": "auto",
+    "enable_rigging": true,
+    "rigging_height_meters": 2.4,
+    "enable_animation": false,
+    "texture_prompt": "Weathered pale grey limestone funerary sculpture. Fine pores, subtle hairline cracks and dark crevice patina. Matte stone, no painted eyes, no skin, no clothing fabric: the entire sculpture including wings and drapery is carved stone."
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0a7a5-52f7-7031-9471-5d6bdbb4edd8",
+  "response_url": "https://queue.fal.run/meshy/v7/requests/01a0a7a5-52f7-7031-9471-5d6bdbb4edd8",
+  "status_url": "https://queue.fal.run/meshy/v7/requests/01a0a7a5-52f7-7031-9471-5d6bdbb4edd8/status",
+  "cancel_url": "https://queue.fal.run/meshy/v7/requests/01a0a7a5-52f7-7031-9471-5d6bdbb4edd8/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}

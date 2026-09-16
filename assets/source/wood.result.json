@@ -1,0 +1,47 @@
+{
+  "images": [
+    {
+      "url": "https://v3b.fal.media/files/b/0aaa96e5/DzqJDyeeLKqoeI28xVH5v_FYR9QqrM.png",
+      "content_type": "image/png",
+      "file_name": "DzqJDyeeLKqoeI28xVH5v_FYR9QqrM.png",
+      "file_size": null,
+      "width": 2048,
+      "height": 2048
+    },
+    {
+      "url": "https://v3b.fal.media/files/b/0aaa96f1/pTEXetF1NOKGGd-20BL1v_jQCBzeWr.png",
+      "content_type": "image/png",
+      "file_name": "pTEXetF1NOKGGd-20BL1v_jQCBzeWr.png",
+      "file_size": null,
+      "width": 2048,
+      "height": 2048,
+      "map_type": "basecolor"
+    },
+    {
+      "url": "https://v3b.fal.media/files/b/0aaa96f1/pssSHyFqEAC1bGzd3Y8KI_6XPAtQwc.png",
+      "content_type": "image/png",
+      "file_name": "pssSHyFqEAC1bGzd3Y8KI_6XPAtQwc.png",
+      "file_size": null,
+      "width": 2048,
+      "height": 2048,
+      "map_type": "normal"
+    },
+    {
+      "url": "https://v3b.fal.media/files/b/0aaa96f1/vSvpzXUrGsUzgISV-u-LE_DZHVosso.png",
+      "content_type": "image/png",
+      "file_name": "vSvpzXUrGsUzgISV-u-LE_DZHVosso.png",
+      "file_size": null,
+      "width": 2048,
+      "height": 2048,
+      "map_type": "roughness"
+    }
+  ],
+  "seed": 1202982056,
+  "prompt": "High-resolution 4k photograph of ancient dark brown oak wood texture, featuring a fine vertical long grain and weathered timber characteristics. The surface shows subtle worn areas, shallow cracks, and the aged patina of a historic church pew. The color palette is a restrained, deep chocolate brown without orange undertones. The lighting is uniform and flat to emphasize the realistic PBR surface details, showcasing the raw, unpainted wood fibers and natural matte finish. Detailed macro shot focusing on the organic textures of aged oak, free of knots or distracting objects, presented as a seamless architectural material.",
+  "timings": {
+    "texture_generation": 10.657341982005164,
+    "texture_upscale": 49.606037877034396,
+    "texture_second_pass": 13.11880427901633,
+    "pbr_prediction": 181.46037513692863
+  }
+}

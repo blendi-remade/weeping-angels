@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+  "input": {
+    "text": "Quiet unsettling atmosphere inside a vast abandoned stone chapel at night. Distant rain against old leaded windows, a low cold wind sighing through broken masonry, isolated droplets falling into puddles with long natural cathedral reverberation. Very subtle distant old wood creaking. Spacious, realistic environmental recording. No music, no melody, no voices, no footsteps, no loud thunder, no sudden events. Consistent quiet level, seamless loop.",
+    "duration_seconds": 22,
+    "loop": true,
+    "prompt_influence": 0.55,
+    "output_format": "mp3_44100_192"
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0a7c1-916c-7912-a235-8dca48999cbb",
+  "response_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0a7c1-916c-7912-a235-8dca48999cbb",
+  "status_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0a7c1-916c-7912-a235-8dca48999cbb/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0a7c1-916c-7912-a235-8dca48999cbb/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}

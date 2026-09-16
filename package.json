@@ -1,0 +1,29 @@
+{
+  "name": "dont-look-away",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4187 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4187 --strictPort",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "assets": "node scripts/generate-assets.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
+    "@types/node": "^22.20.3",
+    "@types/three": "^0.185.0",
+    "meshoptimizer": "^1.2.0",
+    "playwright": "^1.58.0",
+    "sharp": "^0.35.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

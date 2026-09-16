@@ -1,0 +1,127 @@
+{
+  "runtimeBytes": 17511805,
+  "runtime": [
+    {
+      "file": "public/assets/angel-game.glb",
+      "bytes": 5190404,
+      "sha256": "965053a941619cbdcbd4e8731f1a7638b61b7f081637939877ae6e921353e0b3"
+    },
+    {
+      "file": "public/assets/chapel-ambience.mp3",
+      "bytes": 529807,
+      "sha256": "6d319aa49bd81dedd10d8a13d3c5df61eba3f39f0a1139a9c128b0b0f1f4683b"
+    },
+    {
+      "file": "public/assets/floor-basecolor.webp",
+      "bytes": 592482,
+      "sha256": "ee5cf6d8561c49f608b913939be086c582bbad22181f2978dcf10c9516f27779"
+    },
+    {
+      "file": "public/assets/floor-normal.webp",
+      "bytes": 522654,
+      "sha256": "d5ae482562e3e3934b709c057f297737e6a5e8a7ece366bdc517cb398d46d1ae"
+    },
+    {
+      "file": "public/assets/floor-roughness.webp",
+      "bytes": 385190,
+      "sha256": "bfadaa27815199e7f6c538f4497828bdbb1c672873bc7cdc83d8530d390d2da6"
+    },
+    {
+      "file": "public/assets/iron-gate.mp3",
+      "bytes": 73395,
+      "sha256": "2050cb712d034fd42dd3db380d488e3ba043dbe62b5c84de136c673082c431d3"
+    },
+    {
+      "file": "public/assets/limestone-basecolor.webp",
+      "bytes": 1629966,
+      "sha256": "66e974b0b3e63bdba3f4256dac848d7508ca48d360cdc071f14350180cb0806f"
+    },
+    {
+      "file": "public/assets/limestone-normal.webp",
+      "bytes": 737980,
+      "sha256": "db035ba6ca757783da221f451e0db126b2c669fada9fd4f4b82e0590f7987685"
+    },
+    {
+      "file": "public/assets/limestone-roughness.webp",
+      "bytes": 993322,
+      "sha256": "a721903d27ccb6816b4833075e4eab17de84b74c5af0779066038ca3e945898d"
+    },
+    {
+      "file": "public/assets/pew-game.glb",
+      "bytes": 3620908,
+      "sha256": "e5413f9a4393b2d9ebf8a3025606ecde13aa0343b3dc8f6e52cf564aa28fe485"
+    },
+    {
+      "file": "public/assets/stone-scrape.mp3",
+      "bytes": 37033,
+      "sha256": "4130a79260f37385485ed51007da0d2380be228732b0d2d6714aa6c2f8e9cd89"
+    },
+    {
+      "file": "public/assets/wood-basecolor.webp",
+      "bytes": 1593186,
+      "sha256": "32951e0006bc8ba97fefbf6b53088ff185ad045e58a067a9853602f72f84a94b"
+    },
+    {
+      "file": "public/assets/wood-normal.webp",
+      "bytes": 842510,
+      "sha256": "b36074131af86e55f6eac30dae4ea07aaff04af9fc6d760f1c94e9cc10885a2a"
+    },
+    {
+      "file": "public/assets/wood-roughness.webp",
+      "bytes": 762968,
+      "sha256": "2197bed5ce2a885ba11ae0513956eebcbf4756cdfcacf7ad0798983210f31fa0"
+    }
+  ],
+  "productionJobs": [
+    {
+      "record": "assets/source/angel-mesh.job.json",
+      "endpoint": "meshy/v7/image-to-3d",
+      "requestId": "01a0a7a5-52f7-7031-9471-5d6bdbb4edd8"
+    },
+    {
+      "record": "assets/source/angel-reference.job.json",
+      "endpoint": "fal-ai/nano-banana-2",
+      "requestId": "01a0a7a4-c487-72f0-b4ab-8599f99d72d5"
+    },
+    {
+      "record": "assets/source/chapel-ambience.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0a7c1-916c-7912-a235-8dca48999cbb"
+    },
+    {
+      "record": "assets/source/floor.job.json",
+      "endpoint": "fal-ai/patina/material",
+      "requestId": "01a0a7a5-7be5-74b2-97cf-e05d8da816d4"
+    },
+    {
+      "record": "assets/source/iron-gate.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0a7c1-9170-7710-b29e-cb068914fdab"
+    },
+    {
+      "record": "assets/source/limestone.job.json",
+      "endpoint": "fal-ai/patina/material",
+      "requestId": "01a0a7a5-7be6-7ca3-8fbc-8364904cbbb8"
+    },
+    {
+      "record": "assets/source/pew-mesh.job.json",
+      "endpoint": "meshy/v7/image-to-3d",
+      "requestId": "01a0a7b5-ea4e-76d0-990e-e3d550ec05b4"
+    },
+    {
+      "record": "assets/source/pew-reference.job.json",
+      "endpoint": "fal-ai/nano-banana-2",
+      "requestId": "01a0a7b4-fc2e-7e91-a563-0f0546f55488"
+    },
+    {
+      "record": "assets/source/stone-scrape.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0a7c1-9170-7e73-b4f2-b83f24f96788"
+    },
+    {
+      "record": "assets/source/wood.job.json",
+      "endpoint": "fal-ai/patina/material",
+      "requestId": "01a0a7a5-7be3-7b33-8f72-ad00fe1ac700"
+    }
+  ]
+}

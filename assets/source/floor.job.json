@@ -1,0 +1,25 @@
+{
+  "endpoint": "fal-ai/patina/material",
+  "input": {
+    "prompt": "Very old dark grey limestone flagstone floor, large irregular rectangular slabs, thin recessed seams, worn smooth and slightly damp surfaces, fine scratches, subtle cracks, charcoal and desaturated taupe, realistic abandoned Victorian church floor. Flat orthographic seamless PBR surface, no objects, no perspective.",
+    "image_size": {
+      "width": 2048,
+      "height": 2048
+    },
+    "maps": [
+      "basecolor",
+      "normal",
+      "roughness"
+    ],
+    "output_format": "png",
+    "num_inference_steps": 8
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0a7a5-7be5-74b2-97cf-e05d8da816d4",
+  "response_url": "https://queue.fal.run/fal-ai/patina/requests/01a0a7a5-7be5-74b2-97cf-e05d8da816d4",
+  "status_url": "https://queue.fal.run/fal-ai/patina/requests/01a0a7a5-7be5-74b2-97cf-e05d8da816d4/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/patina/requests/01a0a7a5-7be5-74b2-97cf-e05d8da816d4/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}

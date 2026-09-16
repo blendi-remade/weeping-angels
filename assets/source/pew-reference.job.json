@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/nano-banana-2",
+  "input": {
+    "prompt": "A single exquisite old Gothic church pew bench, isolated studio asset photograph on a plain neutral grey background. Three-quarter front view showing the entire bench and both side panels. Seats three people, long bench with a tall continuous wooden backrest, dark aged brown oak, intricate carved Gothic pointed tracery on the back, ends with finely carved quatrefoil and elegant curved armrests, sturdy feet touching the floor. Worn rounded edges, wood grain, historical English Victorian church craftsmanship. Physically plausible construction, exceptionally detailed carved solid wood. Soft even diffuse studio lighting with a faint contact shadow. No people, no candles, no surrounding room, no text, no cropped edges. Highly realistic 3D reconstruction reference.",
+    "resolution": "2K",
+    "aspect_ratio": "3:2",
+    "output_format": "png",
+    "num_images": 1
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0a7b4-fc2e-7e91-a563-0f0546f55488",
+  "response_url": "https://queue.fal.run/fal-ai/nano-banana-2/requests/01a0a7b4-fc2e-7e91-a563-0f0546f55488",
+  "status_url": "https://queue.fal.run/fal-ai/nano-banana-2/requests/01a0a7b4-fc2e-7e91-a563-0f0546f55488/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/nano-banana-2/requests/01a0a7b4-fc2e-7e91-a563-0f0546f55488/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}
