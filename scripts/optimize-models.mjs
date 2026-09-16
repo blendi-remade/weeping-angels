@@ -6,7 +6,10 @@ import sharp from 'sharp';
 import fs from 'node:fs/promises';
 await MeshoptEncoder.ready;await MeshoptDecoder.ready;
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.encoder':MeshoptEncoder,'meshopt.decoder':MeshoptDecoder});
-for(const [source,target,ratio]of [['angel-poses','angel-game',1],['pew','pew-game',.35]]){
+const models=[['angel-poses','angel-game',1],['pew','pew-game',.35]];
+const selected=process.argv.slice(2);
+if(selected.some(name=>!models.some(([source])=>source===name)))throw new Error('Choose angel-poses or pew, or omit arguments to optimize both.');
+for(const [source,target,ratio]of models.filter(([source])=>!selected.length||selected.includes(source))){
   const doc=await io.read(`assets/source/${source}.glb`);
   const count=()=>doc.getRoot().listMeshes().reduce((a,m)=>a+m.listPrimitives().reduce((b,p)=>b+(p.getIndices()?.getCount()??p.getAttribute('POSITION').getCount())/3,0),0);
   const before=count();

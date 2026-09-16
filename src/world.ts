@@ -3,10 +3,13 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Reflector } from 'three/addons/objects/Reflector.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { createPowerCabinet } from './power-cabinet';
 
 export type Obstacle = { x:number; z:number; w:number; d:number; h:number };
 export type Station = { id:'power'|'key'|'gate'|'note'; position:THREE.Vector3; object:THREE.Group; label:string };
 export const obstacles:Obstacle[]=[];
+// Opaque inner volumes, separate from the generous navigation colliders.
+export const sightBlockers:THREE.Box3[]=[];
 export function insideFloor(x:number,z:number,r=0){
   return (Math.abs(x)<7.65-r && Math.abs(z)<15.6-r)||
     (x>7-r && x<13.6-r && z>-10.6+r && z<-3.4-r)||
@@ -32,6 +35,7 @@ export function segmentBlocked(a:THREE.Vector3,b:THREE.Vector3){
 export function random(seed=813){return ()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};}
 
 export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>void){
+  sightBlockers.length=0;
   const rng=random(),loader=new THREE.TextureLoader();
   async function material(name:string,color:number,roughness:number,scale:number){
     const [map,normalMap,roughnessMap]=await Promise.all(['basecolor','normal','roughness'].map(type=>loader.loadAsync(`/assets/${name}-${type}.webp`).catch(()=>null)));
@@ -54,7 +58,10 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   function box(w:number,h:number,d:number,x:number,y:number,z:number,m:THREE.Material=stone,solid=false,ry=0){
     const g=new THREE.BoxGeometry(w,h,d);const uv=g.attributes.uv,p=g.attributes.position,n=g.attributes.normal;
     for(let i=0;i<uv.count;i++){const nx=Math.abs(n.getX(i)),ny=Math.abs(n.getY(i));uv.setXY(i,nx>.5?p.getZ(i):p.getX(i),ny>.5?p.getZ(i):p.getY(i));}
-    add(g,m,x,y,z,0,ry);if(solid)obstacles.push({x,z,w,d,h:y+h/2});
+    add(g,m,x,y,z,0,ry);if(solid){
+      obstacles.push({x,z,w,d,h:y+h/2});
+      if(ry===0)sightBlockers.push(new THREE.Box3(new THREE.Vector3(x-w/2,y-h/2,z-d/2),new THREE.Vector3(x+w/2,y+h/2,z+d/2)).expandByScalar(-.005));
+    }
   }
   function cylinder(r:number,rt:number,h:number,x:number,y:number,z:number,m=trim,segments=12){add(new THREE.CylinderGeometry(rt,r,h,segments),m,x,y,z);}
   function line(points:THREE.Vector3[],radius:number,m:THREE.Material=trim){add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),Math.max(12,points.length*3),radius,6,false),m);}
@@ -81,7 +88,11 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     box(.5,7,3,side*7.9,6.5,doorZ,stone);
     arch(side*7.58,doorZ,3,2.1,1.8,'z',.15);
     for(const zz of [doorZ-1.6,doorZ+1.6]){box(.3,3,.3,side*7.55,1.5,zz,trim);}
-    for(const y of [.2,.65,4.2,6.8,9.5])box(.3,.13,31.5,side*7.56,y,0,trim);
+    // Low wall courses stop at the jambs instead of bridging the walkways.
+    for(const y of [.2,.65,4.2,6.8,9.5]){
+      const trimSpans:[number,number][]=y<3?[[-15.75,doorZ-1.5],[doorZ+1.5,15.75]]:[[-15.75,15.75]];
+      for(const [a,b]of trimSpans)box(.3,.13,b-a,side*7.56,y,(a+b)/2,trim);
+    }
   }
   box(16,11,.6,0,5.5,-16,stone,true);box(6.5,10,.5,-4.9,5,16,stone,true);box(6.5,10,.5,4.9,5,16,stone,true);box(3.4,6,.5,0,7,16,stone);
   // Side rooms: coherent closed envelopes.
@@ -100,6 +111,8 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     for(let i=0;i<8;i++){const a=i*Math.PI/4;cylinder(.085,.08,5.45,x+Math.cos(a)*.29,3.1,z+Math.sin(a)*.29);}
     for(const [y,r,h] of [[.45,.39,.12],[5.65,.38,.13],[5.8,.48,.18],[6,.52,.16]] as number[][])cylinder(r,r,h,x,y,z);
     obstacles.push({x,z,w:.85,d:.85,h:6.1});
+    // This square stays inside the narrowest part of the round stone shaft.
+    sightBlockers.push(new THREE.Box3(new THREE.Vector3(x-.2,.3,z-.2),new THREE.Vector3(x+.2,5.9,z+.2)));
     arch(0,z,9.4,5.9,4.3,'x',.14);arch(0,z+.21,9.4,5.9,4.3,'x',.07);
     for(const s of [-1,1])line([new THREE.Vector3(x,5.9,z),new THREE.Vector3(x+s*.12,7.1,z+1),new THREE.Vector3(0,10.1,z+3)],.08,trim);
   }
@@ -182,11 +195,8 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   for(const y of [.25,1.4,3.3])meshBox(3.1,.07,.065,0,y,0,metal,gate);
   arch(0,15.45,3.3,3.4,1.7,'x',.14);plaque('SAINT ORISON\nMDCCCLXXXIX',2.1,.6,0,5.65,15.68,Math.PI);
   // Rooms: electrical switch cabinet and archive shelves.
-  const power=new THREE.Group();power.position.set(13.45,0,-7);power.rotation.y=-Math.PI/2;scene.add(power);
-  meshBox(.8,1.1,.2,0,1.45,0,metal,power);meshBox(.68,.95,.06,0,1.45,.14,darkStone,power);meshBox(.08,.35,.15,.18,1.3,.23,brass,power);
-  const powerLamp=new THREE.Mesh(new THREE.SphereGeometry(.035,10,8),new THREE.MeshBasicMaterial({color:0xa04b24}));powerLamp.position.set(-.2,1.65,.2);power.add(powerLamp);
-  plaque('SACRISTY\nELECTRICAL SUPPLY',1.1,.45,13.46,2.4,-7,-Math.PI/2);
-  for(let i=0;i<3;i++){line([new THREE.Vector3(13.4,1.7,-7+.3*i),new THREE.Vector3(13.4,3.8,-7+.3*i),new THREE.Vector3(10,3.8,-7+.3*i)],.018,metal);}
+  const cabinet=createPowerCabinet();const power=cabinet.group;
+  power.position.set(13.45,0,-7);power.rotation.y=-Math.PI/2;scene.add(power);
   const bookMaterials=Array.from({length:6},()=>new THREE.MeshStandardMaterial({color:new THREE.Color().setHSL(.07+rng()*.05,.15,.09+rng()*.12),roughness:.98}));
   for(const z of [4,10]){
     box(4.1,2.7,.45,-11,1.35,z,wood,true);
@@ -202,8 +212,11 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   const paper=new THREE.Mesh(new THREE.PlaneGeometry(.38,.5),new THREE.MeshStandardMaterial({color:0xb6ae91,roughness:1}));paper.rotation.x=-Math.PI/2;paper.rotation.z=.16;note.add(paper);
   plaque('THE ARCHIVE',1.2,.28,-7.52,3.1,7,Math.PI/2);plaque('SACRISTY',1.15,.28,7.52,3.1,-7,-Math.PI/2);
   // Wall tombs, inscriptions, reliefs, broken masonry and scattered leaves.
-  for(const side of [-1,1])for(const z of [-9,3,13]){
-    if(side===-1&&z===3)continue;
+  for(const side of [-1,1])for(const bayZ of [-9,3,13]){
+    if(side===-1&&bayZ===3)continue;
+    // Keep the sacristy tomb clear of the jamb, including its projecting cap.
+    // Its old end face was coplanar with the jamb and flickered in depth.
+    const z=side===1&&bayZ===-9?-9.55:bayZ;
     box(.45,1.7,1.1,side*7.48,1.0,z,darkStone);box(.55,.16,1.35,side*7.4,1.91,z,trim);
     arch(side*7.2,z,1.05,1.3,.7,'z',.045);box(.03,.65,.08,side*7.22,1.1,z,brass);box(.03,.06,.36,side*7.21,1.25,z,brass);
   }
@@ -227,7 +240,14 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   }
   for(const x of [-1.15,-.8,.8,1.15])candle(x,1.43,-14,.23+rng()*.2);
   const altarLight=new THREE.PointLight(0xffce88,15,9,2);altarLight.position.set(0,2,-13);scene.add(altarLight);candleLights.push(altarLight);
-  for(const [x,z] of [[12,-9.7],[-12,7],[6.8,10.7]]){candle(x,1,z,.32);const l=new THREE.PointLight(0xffc07e,9,6,2);l.position.set(x,1.5,z);scene.add(l);candleLights.push(l);}
+  // The sacristy candle sits in a wall-mounted iron sconce and drip tray.
+  box(.16,.34,.065,12,1.3,-10.56,metal);
+  for(const y of [1.18,1.42])add(new THREE.SphereGeometry(.018,8,6),brass,12,y,-10.515);
+  line([new THREE.Vector3(12,1.22,-10.51),new THREE.Vector3(12,1.18,-10.37),new THREE.Vector3(12,1.32,-10.27)],.025,metal);
+  cylinder(.125,.145,.055,12,1.3475,-10.27,brass,24);
+  add(new THREE.TorusGeometry(.133,.013,8,32),brass,12,1.378,-10.27,Math.PI/2);
+  cylinder(.045,.045,.055,12,1.3975,-10.27,metal,16);
+  for(const [x,y,z] of [[12,1.415,-10.27],[-12,1,7],[6.8,1,10.7]]){candle(x,y,z,.32);const l=new THREE.PointLight(0xffc07e,9,6,2);l.position.set(x,y+.5,z);scene.add(l);candleLights.push(l);}
   const fire=new THREE.Mesh(mergeGeometries(fireGeometries),flameMaterial);scene.add(fire);
   // Hanging sanctuary banners and iron chandeliers break up the repeated bays.
   const fabric=new THREE.MeshStandardMaterial({color:0x35282a,roughness:1,side:THREE.DoubleSide});
@@ -278,7 +298,7 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     flameMaterial.uniforms.time.value=time;beamMaterial.uniforms.time.value=time;
     candleLights.forEach((l,i)=>l.intensity=(i===8?15:10)*(1+Math.sin(time*5+i*7)*.06+Math.sin(time*11+i)*.025));
     dust.rotation.y=Math.sin(time*.025)*.02;dust.position.y=Math.sin(time*.06)*.08;
-    (powerLamp.material as THREE.MeshBasicMaterial).color.set(powered?0x9bbe73:0xa04b24);
+    cabinet.setPowered(powered);
     key.rotation.y=time*.25;
   }};
 }

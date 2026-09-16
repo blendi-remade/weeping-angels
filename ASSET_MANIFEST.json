@@ -1,10 +1,10 @@
 {
-  "runtimeBytes": 17511805,
+  "runtimeBytes": 17648737,
   "runtime": [
     {
       "file": "public/assets/angel-game.glb",
-      "bytes": 5190404,
-      "sha256": "965053a941619cbdcbd4e8731f1a7638b61b7f081637939877ae6e921353e0b3"
+      "bytes": 5327336,
+      "sha256": "c1bfb19ae1e482d57ec51eb386080f6cd2a5965258e0e19117d56d2d613cd076"
     },
     {
       "file": "public/assets/chapel-ambience.mp3",

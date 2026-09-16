@@ -130,12 +130,19 @@ function update(dt:number){
     walkTime+=dt*(running?11:7);stepTime-=dt;if(stepTime<=0){sound.step(running);stepTime=running?.32:.49;}
   }else stepTime=Math.min(stepTime,.1);
   camera.position.copy(player);camera.position.y=1.68+(moving?Math.sin(walkTime)*.022:Math.sin(elapsed*1.7)*.004);camera.rotation.set(pitch,yaw,moving?Math.sin(walkTime*.5)*.003:0,'YXZ');camera.updateMatrixWorld();
+  // The blink starts with an 85 ms closing transition. Keep angels frozen
+  // until both opaque lids actually cover the entire rendered viewport.
+  let eyesClosed=false;
+  if(blinkTime>0){
+    const [top,bottom]=Array.from($('blink').children).map(lid=>lid.getBoundingClientRect());
+    eyesClosed=top.top<=0&&top.bottom>=innerHeight/2&&bottom.top<=innerHeight/2&&bottom.bottom>=innerHeight;
+  }
   let nearest=30;
   for(let i=0;i<angels.length;i++){
     const a=angels[i];if(i===0&&a.seen&&elapsed>14)a.active=true;
     if(i===1&&powered&&!secondIntro&&player.z>0){secondIntro=true;a.active=true;subtitle('There were only two statues at the altar. Where is the other one?',6);}
     const oldX=a.group.position.x,oldZ=a.group.position.z;
-    if(grace<=0&&a.update(dt,camera,blinkTime>0,sound,hasKey?4.2:3.2)){caught(a);break;}
+    if(grace<=0&&a.update(dt,camera,eyesClosed,sound,hasKey?4.2:3.2)){caught(a);break;}
     if(world&&(a.group.position.x!==oldX||a.group.position.z!==oldZ))world.moon.shadow.needsUpdate=true;
     if(a.active)nearest=Math.min(nearest,a.group.position.distanceTo(player));
   }

@@ -56,6 +56,8 @@ python scripts/optimize-textures.py
 node scripts/optimize-models.mjs
 ```
 
+After revising just the angel in Blender, run `node scripts/optimize-models.mjs angel-poses` and `node scripts/asset-manifest.mjs` to update its runtime model and asset checksum. The pose script welds UV seam vertices, smooths sleeve weights while anchoring the wings, and bakes the inward-facing hands and tucked elbows into the initial Weeping pose.
+
 Jobs are recorded and resumable. Re-running a completed mode reads its existing request instead of submitting another generation. Source references, input parameters, results, and unoptimized assets are in `assets/source/`. Runtime assets are in `public/assets/`. Blender authoring output and verification captures are in `output/`.
 
 The development-only [asset inspector](http://127.0.0.1:4187/asset.html) allows orbiting the angel and inspecting every pose under neutral light.
