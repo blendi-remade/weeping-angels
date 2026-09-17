@@ -8,7 +8,7 @@ A playable browser horror experiment built with **fal**, **GPT-6-Astra in Codex*
 
 *Actual gameplay capture with a rehearsed camera position. The game's visibility, movement, flashlight and blink rules drive the encounter.*
 
-<!-- LIVE_DEMO -->
+**[Play the demo in your browser](https://weeping-angels.vercel.app/)**
 
 Desktop keyboard and mouse required. Headphones recommended. Includes sudden darkness, threatening imagery and jump scares.
 
