@@ -18,7 +18,7 @@ export function createFlashlight(camera:THREE.Camera){
   // A little spill catches the barrel without lighting the room behind the beam.
   const spill=new THREE.PointLight(0xc4d1c8,.85,.75,2);spill.position.set(.12,-.06,-.3);camera.add(spill);
   let amount=0;
-  return {group,reset(raised=false){amount=raised?1:0;},update(dt:number,raised:boolean,time:number,moving:boolean,fear:number){
+  return {group,spill,reset(raised=false){amount=raised?1:0;},update(dt:number,raised:boolean,time:number,moving:boolean,fear:number){
     amount=THREE.MathUtils.damp(amount,raised?1:0,raised?9:12,dt);
     group.visible=amount>.015;group.position.set(.285+Math.sin(time*1.5)*.002,-.25-(1-amount)*.38,-.46);
     group.rotation.set(-.04+(1-amount)*.65,-.08,.08);

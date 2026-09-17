@@ -1,53 +1,113 @@
 # Don't Look Away
 
-A complete desktop-browser horror vignette in Saint Orison's chapel. Two stone angels move through the level whenever they are unobserved. Restore the power, recover the gate key, and escape.
+**Two angels. Ten seconds of candlelight. One flashlight.**
+
+A playable browser horror experiment built with **fal**, **GPT-6-Astra in Codex**, and **Three.js**. You enter Saint Orison's chapel, look away from its statues, and discover that they have moved. Then the candles go out.
+
+![Flashlight off, stone moves. Flashlight on, the angel freezes.](docs/media/flashlight.gif)
+
+*Actual gameplay capture with a rehearsed camera position. The game's visibility, movement, flashlight and blink rules drive the encounter.*
+
+<!-- LIVE_DEMO -->
+
+Desktop keyboard and mouse required. Headphones recommended. Includes sudden darkness, threatening imagery and jump scares.
+
+## Inside the chapel
+
+![The candlelit chapel, carved pews and stone angels before the blackout.](docs/media/chapel.jpg)
+
+The angels freeze whenever any part of them can be seen, including a wing beside a column or a reflection on the damp floor. Looking away or blinking gives them a chance to move. In complete darkness, looking in their direction is not enough: you need light to see them.
+
+The opening reaches full darkness about **10 seconds into active gameplay**. A flashlight reveals where the statues have gone. Stone scrapes are positional, breathing becomes strained, and a heartbeat starts after you witness an angel change position or pose.
+
+![An angel caught in the flashlight beam after the chapel goes dark.](docs/media/flashlight.jpg)
+
+There is also a short escape objective: restore the electrical supply in the sacristy, collect the gate key in the archive, and return to the entrance. The blackout trips any power restored before it; restoring the supply afterward brings back the service lights. Pausing or switching tabs freezes gameplay.
+
+This is an experimental desktop demo. Close-range capture still needs tuning; further encounter and progression work is planned.
+
+## Stack at a glance
+
+| Layer | Technology | What it does here |
+| --- | --- | --- |
+| Development | GPT-6-Astra in Codex | Collaborative implementation, scene construction, asset-pipeline scripts, Blender pose work, iteration and debugging |
+| Asset generation | fal | One production API for reference images, 3D models, surface materials and sound effects |
+| Game and renderer | Three.js 0.185.1 + TypeScript | Scene graph, WebGL rendering, first-person camera, visibility, navigation, collision and interactions |
+| Scene lighting | Three.js lights and custom shaders | Candle flames, blackout wave, flashlight shadows, stained glass, drifting dust and smoke |
+| Post-processing | EffectComposer, bloom, ACES tone mapping, film pass | Restrained highlights, grain, vignette and the final image |
+| Audio | Native Web Audio API | Positional sound, occlusion filtering, reverb, breathing, heartbeat and mix control |
+| Asset preparation | Blender, glTF Transform, Meshopt, WebP | Authored statue poses, optimized GLB models and compressed textures |
+| Tooling | Vite 7, TypeScript 5, Node.js test runner + tsx | Development server, static production build, type checking and regression tests |
+| Hosting | Vercel | Static delivery of the built game and its bundled assets |
+
+The shipped game is client-side TypeScript. It has no React application layer, game server, runtime LLM or live generation dependency. fal and GPT-6-Astra are used while building it; the browser plays the finished assets and deterministic game logic.
+
+## How we use fal
+
+The production pipeline lives in [scripts/generate-assets.mjs](scripts/generate-assets.mjs). It submits jobs through the fal queue API, records their progress locally, resumes existing requests and downloads the finished outputs.
+
+| Asset | Model on fal | Production path |
+| --- | --- | --- |
+| Angel reference | [Nano Banana 2](https://fal.ai/models/fal-ai/nano-banana-2) | A full-body, neutral-light sculpture reference with readable wings, hands and drapery |
+| Angel geometry | [Meshy v7 image-to-3D](https://fal.ai/models/meshy/v7/image-to-3d) | Reference image to textured PBR mesh with rigging, then Blender correction and pose authoring |
+| Carved church pew | Nano Banana 2 + Meshy v7 | Reference image to carved-oak model, optimized once and instanced throughout the chapel |
+| Limestone, flagstones and oak | [PATINA](https://fal.ai/models/fal-ai/patina/material) | Base color, normal and roughness maps, converted to WebP for delivery |
+| Atmosphere and physical sound | [ElevenLabs Sound Effects v2](https://fal.ai/models/fal-ai/elevenlabs/sound-effects/v2) | Chapel ambience, stone movement, gate creak, breathing, candle snuff and flashlight draw |
+
+The generated model is an asset source, not a finished game character. Blender corrects the angel's sleeve and wing deformation and authors four shared-mesh poses: **Weeping, Watching, Reaching and Lunging**. The browser swaps those poses only when the statue is unobserved. glTF Transform and Meshopt reduce model size; the pew uses GPU instancing rather than separate copies of its geometry.
+
+The heartbeat is synthesized in Web Audio, while the environmental and physical recordings come from fal. This lets the pulse follow the player's witnessed danger without generating new audio during play.
+
+[ASSET_MANIFEST.json](ASSET_MANIFEST.json) lists the bundled asset sizes, checksums and model endpoints. The current models, textures and audio total about **17.3 MiB**, before fonts and application code. Prompts and generation parameters are readable in the production script. Raw job receipts and result URLs remain local.
+
+## How we use GPT-6-Astra
+
+GPT-6-Astra was the coding collaborator in Codex during development. Work included the TypeScript gameplay systems, modular chapel geometry, lighting and audio integration, fal generation scripts, Blender pose scripts, and repeated fixes based on in-game screenshots and playtesting.
+
+The important handoff is from generated material to an interactive scene: importing and optimizing meshes, making poses believable, deciding what counts as visible, preventing statues from overlapping, and coordinating light, movement and sound. Those behaviors are implemented in code and checked with focused tests.
+
+GPT-6-Astra is a development credit. Players do not need an OpenAI account, and the deployed game makes no OpenAI API requests.
+
+## How Three.js brings it together
+
+- **World:** modular stone architecture is constructed in code. Static geometry is merged by material, pews are instanced, and optimized GLBs supply the sculptural detail.
+- **Observation:** conservative bounds contain every authored statue pose. The camera frustum, opaque cover and floor reflection checks decide whether any part might be visible. Uncertainty keeps an angel still.
+- **Darkness:** light volumes distinguish a hidden statue from one revealed by the flashlight or a lit background. A flashlight keypress freezes a potentially visible statue before the draw animation finishes.
+- **Movement:** grid navigation routes around walls and furniture. Swept separation checks prevent one angel from passing through another. Visibility is also checked across a proposed step.
+- **Presentation:** a shadow-casting flashlight, animated candles, stained glass, a subtle floor reflection, bloom, grain and vignette establish the chapel's look.
+- **Sound:** HRTF panning places stone movement in the room. Cover muffles it, reverb gives it space, and the mix changes as the chapel darkens.
 
 ## Play locally
 
-```powershell
-npm install
+Use Node.js 22 or later.
+
+```sh
+npm ci
 npm run dev
 ```
 
-Open **http://127.0.0.1:4187/** with a keyboard and mouse. Headphones make the positional movement sounds useful. All game assets and fonts are bundled; playing does not require an API key or a model request.
+Open [localhost:4187](http://127.0.0.1:4187/). All assets and fonts are bundled. **No API key is needed to install, build or play.**
 
 | Control | Action |
 | --- | --- |
 | WASD / arrow keys | Walk |
 | Mouse | Look |
 | Shift | Run |
-| E, held where indicated | Interact |
-| Space | Blink deliberately |
-| F | Draw / toggle flashlight |
+| E | Interact; hold where indicated |
+| Space | Blink |
+| F | Draw or toggle the flashlight |
 | Escape | Pause and release the mouse |
-| H | Hide the interface for captures |
+| H | Hide the interface |
 
-The pause menu includes sensitivity, automatic blinking, sound, and High/Performance rendering settings. Losing focus or switching tabs pauses the game. Checkpoints restore earned progress at the sacristy and archive.
+The pause menu includes sensitivity, automatic blinking, sound and High/Performance rendering options. Performance mode lowers rendering resolution and disables the reflection and bloom passes. Frame rate depends on your GPU, viewport and other running applications.
 
-## The level
+## Generate or revise assets
 
-Enter through the iron gate and move through the nave. The sacristy is on the right toward the sanctuary; its electrical panel releases the archive lock. The archive is on the left toward the entrance. Its key opens the gate you arrived through. A keeper's note sits near the entrance's right aisle.
+This step is optional and makes billable fal requests for jobs that have not already been generated.
 
-The angels respect solid cover, partial visibility, peripheral vision, and visible floor reflections. They navigate around walls and furniture. Statue pose changes only occur outside observation. The second angel and increased pursuit speed make the return journey more dangerous.
+Copy `.env.example` to `.env.local` and set `FAL_KEY`, or provide it as a process environment variable. `FAL_ENV_FILE` can explicitly point to another local environment file. Keep these values local; do not use a `VITE_` prefix for credentials.
 
-The first witnessed change in an angel starts a restrained heartbeat and breathing response. Fear rises with what the player sees and fades slowly after looking away. In the nave, a single gust extinguishes the candles from the sanctuary toward the entrance. Draw the flashlight with F; restoring power brings up the service lights. Darkness never relaxes the observation rule: a visible silhouette still freezes the entire angel.
-
-## Production
-
-| Asset | Production path |
-| --- | --- |
-| Angel | Nano Banana 2 reference → Meshy v7 Ultra/PBR with humanoid rig → Blender weight corrections and authored poses → GLB with shared morph targets |
-| Carved pew | Nano Banana 2 reference → Meshy v7 Ultra/PBR → bounded-error simplification and instancing |
-| Stone, floor, oak | PATINA base color, normal, and roughness maps |
-| Chapel ambience, stone movement, breathing, candle snuff, flashlight draw, gate | ElevenLabs Sound Effects v2 through fal; positional playback, occlusion filtering, room reverb, and normalized levels |
-| Adaptive heartbeat | Synthesized two-part pulse, paced by witnessed danger and recovery |
-| Architecture and gameplay | TypeScript / Three.js; authored modular geometry, collision, navigation, observation, lighting, spatial audio, and interaction |
-
-Blender fixes the auto-rig's wing weights and replaces its emissive preview material with the original PBR material. The four statue states share the same geometry and texture layout. Meshopt and WebP compression reduce the runtime model payloads; detailed source assets remain available for revision.
-
-Production scripts read `FAL_KEY` from `.env.local` or the process environment. Set `FAL_ENV_FILE` to reuse another local environment file without copying its credentials into this repository.
-
-```powershell
+```sh
 node scripts/generate-assets.mjs reference
 node scripts/generate-assets.mjs mesh
 node scripts/generate-assets.mjs materials
@@ -56,32 +116,40 @@ node scripts/generate-assets.mjs pew-mesh
 node scripts/generate-assets.mjs audio
 node scripts/generate-assets.mjs horror-audio
 python scripts/optimize-textures.py
-# Run scripts/pose-angel.py with Blender's --background --python flags.
+# Run scripts/pose-angel.py with Blender's --background --python options.
 node scripts/optimize-models.mjs
+node scripts/asset-manifest.mjs
 ```
 
-After revising just the angel in Blender, run `node scripts/optimize-models.mjs angel-poses` and `node scripts/asset-manifest.mjs` to update its runtime model and asset checksum. The pose script welds UV seam vertices, smooths sleeve weights while anchoring the wings, and bakes the inward-facing hands and tucked elbows into the initial Weeping pose.
+After revising only the angel poses, use `node scripts/optimize-models.mjs angel-poses`. The development-only [asset inspector](http://127.0.0.1:4187/asset.html) lets you orbit the model and inspect each pose under neutral light.
 
-Jobs are recorded and resumable. Re-running a completed mode reads its existing request instead of submitting another generation. Source references, input parameters, results, and unoptimized assets are in `assets/source/`. Runtime assets are in `public/assets/`. Blender authoring output and verification captures are in `output/`.
+Generated source assets live in `assets/source/`; runtime files live in `public/assets/`. Job receipts (`*.job.json`) and result records (`*.result.json`) are ignored and stay on the machine that generated them. A fresh clone without those local receipts submits new jobs when you run generation commands.
 
-The development-only [asset inspector](http://127.0.0.1:4187/asset.html) allows orbiting the angel and inspecting every pose under neutral light.
+## Verify and deploy
 
-## Verify and build
-
-```powershell
+```sh
 npm test
 npm run build
-node scripts/verify.mjs
-node scripts/walkthrough.mjs
-node scripts/benchmark.mjs
+npm run check:release
+npm run preview -- --port 4188
 ```
 
-The browser scripts require the dev server and Chrome. They test observation, looking away, blinking, pause, power/key/exit interactions, capture, and checkpoint recovery, and save screenshots. The benchmark measures actual frame times on the current GPU. `npm run build` creates a deployable static `dist/` directory.
+Tests cover partial visibility, reflections, darkness, flashlight changes, swept movement, angel separation, navigation, awakening and the opening blackout timing. The release check scans repository text and build output for credential patterns, checks the asset manifest, and rejects development controls or generation endpoints in the production bundle.
 
-For a production check, run `npm run preview -- --port 4188` and then `node scripts/production-smoke.mjs`. This also checks that the game needs no external requests and exposes no development controls.
+[Vercel's Vite integration](https://vercel.com/docs/frameworks/frontend/vite) uses `npm run build` and serves `dist/`, as specified in [vercel.json](vercel.json). **Leave project environment variables empty.** The deployed game does not need `FAL_KEY`, OpenAI credentials or a backend proxy.
 
-On the development machine's integrated Radeon 880M at 1600×900, an intermediate optimized title-view benchmark measured approximately 40 fps in High and 60 fps in Performance. Gameplay, resolution, other GPU workloads, and device thermals affect frame times. Performance mode reduces render resolution and removes the reflection/bloom passes.
+The deployment excludes `.env` files, generation source assets, local captures, tests and the asset inspector. Only the static production output is publicly served. Development controls are guarded by `import.meta.env.DEV` and removed from production builds.
 
-## Scope
+## Project map
 
-This release implements the complete power → key → gate escape loop. The opposing-angels shutter puzzle and an explorable second era remain design ideas in `DESIGN.md`. The runtime uses deterministic enemy rules; generative models are part of asset production.
+```text
+src/                 Gameplay, renderer, world, audio and UI
+public/assets/       Optimized models, textures and recordings
+public/fonts/        Bundled fonts and their licenses
+assets/source/       Source images, models and material maps
+scripts/             Asset production, optimization and verification
+tests/              Gameplay regression tests
+docs/media/         README screenshots and gameplay GIF
+```
+
+[DESIGN.md](DESIGN.md) contains longer-term ideas beyond the current demo.

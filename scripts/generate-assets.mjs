@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..');
 let key=process.env.FAL_KEY;
-for(const file of [process.env.FAL_ENV_FILE,path.join(root,'.env.local'),path.resolve(root,'../fal-worldclaw/.env.local')].filter(Boolean)) {
+for(const file of [process.env.FAL_ENV_FILE,path.join(root,'.env.local')].filter(Boolean)) {
   if(key)break;
   try {const source=await fs.readFile(file,'utf8');key=source.match(/^FAL_KEY\s*=\s*["']?([^\r\n"']+)/m)?.[1]?.trim();}catch{}
 }

@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4187 --strictPort",
     "test": "node --import tsx --test tests/*.test.ts",
-    "assets": "node scripts/generate-assets.mjs"
+    "assets": "node scripts/generate-assets.mjs",
+    "check:release": "node scripts/check-release.mjs"
   },
   "dependencies": {
     "three": "0.185.1"

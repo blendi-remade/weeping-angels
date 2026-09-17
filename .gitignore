@@ -5,3 +5,9 @@ dist/
 output/
 tools/
 *.log
+.vercel/
+assets/source/*.job.json
+assets/source/*.result.json
+*.blend1
+*.pem
+*.key

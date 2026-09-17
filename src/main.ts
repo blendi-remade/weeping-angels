@@ -9,8 +9,9 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { makeWorld,canStand,type Station } from './world';
 import { loadAngels,type Angel } from './angels';
 import { Soundscape } from './audio';
-import { HorrorDirector,candleStrength } from './horror';
+import { HorrorDirector,candleStrength,shouldAwakenAngel,OPENING_TIMING } from './horror';
 import { createFlashlight } from './flashlight';
+import type { ObservationLighting,SightLight } from './illumination';
 
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 const show=(id:string,v:boolean)=>$(id).classList.toggle('hidden',!v);
@@ -26,7 +27,8 @@ const pmrem=new THREE.PMREMGenerator(renderer),envScene=new RoomEnvironment();sc
 const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.25,.55,.95);composer.addPass(bloom);composer.addPass(new OutputPass());
 const film=new ShaderPass({uniforms:{tDiffuse:{value:null},time:{value:0},stress:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D tDiffuse;uniform float time;uniform float stress;varying vec2 vUv;float rand(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+time)*43758.5453);}void main(){vec2 uv=vUv;vec3 c=texture2D(tDiffuse,uv).rgb;float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,.82);c=pow(c,vec3(.98,1.,1.01));float vignette=1.-dot(uv-.5,uv-.5)*(.5+stress*.6);c*=vignette;c+=(rand(uv)-.5)*.017;gl_FragColor=vec4(c,1.);}`});composer.addPass(film);
-const flashlight=new THREE.SpotLight(0xffedd1,21,26,Math.PI/7,.75,1.7);flashlight.castShadow=true;flashlight.shadow.mapSize.set(1024,1024);flashlight.shadow.bias=-.0002;flashlight.shadow.normalBias=.015;scene.add(flashlight,flashlight.target);
+const flashlightPower=32;
+const flashlight=new THREE.SpotLight(0xffedd1,flashlightPower,26,Math.PI/7,.75,1.7);flashlight.castShadow=true;flashlight.shadow.mapSize.set(1024,1024);flashlight.shadow.bias=-.0002;flashlight.shadow.normalBias=.015;scene.add(flashlight,flashlight.target);
 flashlight.shadow.autoUpdate=false;
 const fill=new THREE.PointLight(0xafc2c9,.7,4,2);scene.add(fill);
 const sound=new Soundscape(),horror=new HorrorDirector();
@@ -43,7 +45,7 @@ function notice(text:string){$('notice').textContent=text;$('notice').style.opac
 function subtitle(text:string,duration=6){$('subtitle').textContent=text;$('subtitle').style.opacity='1';subtitleTimer=duration;}
 function setMode(next:Mode){mode=next;show('menu',next==='menu');show('hud',next==='playing');show('pause',next==='paused');show('ending',next==='dead'||next==='won');keys.clear();hold=0;}
 function reset(resumeCheckpoint=false){
-  powered=resumeCheckpoint&&checkpoint.powered;hasKey=resumeCheckpoint&&checkpoint.hasKey;stage=hasKey?2:powered?1:0;readNote=false;secondIntro=false;elapsed=0;blinkCount=0;eye=1;blinkTime=0;blinkCooldown=0;grace=5;lightOn=powered;yaw=0;pitch=0;player.set(0,1.68,13.1);hold=0;station=null;
+  powered=resumeCheckpoint&&checkpoint.powered;hasKey=resumeCheckpoint&&checkpoint.hasKey;stage=hasKey?2:powered?1:0;readNote=false;secondIntro=false;elapsed=0;blinkCount=0;eye=1;blinkTime=0;blinkCooldown=0;grace=resumeCheckpoint?5:OPENING_TIMING.angelWake;lightOn=powered;yaw=0;pitch=0;player.set(0,1.68,13.1);hold=0;station=null;
   horror.reset(powered);sound.reset();snuffed.clear();torchDrawn=powered;torch.reset(powered);walking=false;show('light-prompt',false);
   if(powered)world?.candleLights.forEach((_,i)=>snuffed.add(i));
   if(resumeCheckpoint&&hasKey){player.set(-11.2,1.68,7);yaw=-Math.PI/2;}else if(resumeCheckpoint&&powered){player.set(11.5,1.68,-7);yaw=Math.PI/2;}
@@ -106,7 +108,7 @@ function interaction(dt:number){
   show('interaction',!!station);$('reticle').classList.toggle('interactive',!!station);
   if(!station){hold=0;return;}
   const label=$('interaction').querySelector('span')!;
-  label.textContent=station.id==='power'&&powered?'POWER RESTORED':station.id==='key'&&!powered?'THE ARCHIVE LOCK NEEDS POWER':station.id==='gate'&&!hasKey?'LOCKED — FIND THE GATE KEY':station.label;
+  label.textContent=station.id==='power'&&powered?'POWER RESTORED':station.id==='key'&&!powered?'THE ARCHIVE LOCK NEEDS POWER':station.id==='gate'&&!hasKey?'LOCKED · FIND THE GATE KEY':station.label;
   if(!keys.has('KeyE')){hold=0;$('interact-progress').style.width='0';return;}
   const seconds=station.id==='power'?1.4:station.id==='gate'?2.4:.25;
   if((station.id==='power'&&powered)||(station.id==='key'&&!powered)||(station.id==='gate'&&!hasKey))return;
@@ -145,18 +147,39 @@ function update(dt:number){
     eyesClosed=top.top<=0&&top.bottom>=innerHeight/2&&bottom.top<=innerHeight/2&&bottom.bottom>=innerHeight;
   }
   sound.listener(player.x,player.z,forward.x,forward.z);
+  const lighting:ObservationLighting={ambient:!world?.isPitchBlack||powered,lights:[]};
+  if(!lighting.ambient){
+    const lights:SightLight[]=[];
+    // Reserve the full beam on the keypress, before the draw animation emits
+    // its first photon. Never use the previous frame's torch position here.
+    if(lightOn){
+      const position=camera.position.clone().add(new THREE.Vector3(.27,-.25,-.68).applyQuaternion(camera.quaternion));
+      const direction=camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(12).add(camera.position).sub(position).normalize();
+      lights.push({position,direction,angle:flashlight.angle,range:flashlight.distance});
+    }
+    // Barrel spill fades while the torch lowers, even after its beam switches off.
+    if(lightOn||torch.spill.intensity>0)lights.push({position:torch.spill.getWorldPosition(new THREE.Vector3()),range:torch.spill.distance});
+    lighting.lights=lights;
+  }
   for(let i=0;i<angels.length;i++){
-    const a=angels[i];if(i===0&&a.seen&&elapsed>14)a.active=true;
+    const a=angels[i];
+    if(shouldAwakenAngel(i,a.seen,{elapsed,powered,hasKey,playerZ:player.z,blackoutStarted:horror.phase!=='quiet'}))a.active=true;
     if(i===1&&powered&&!secondIntro&&player.z>0){secondIntro=true;a.active=true;subtitle('There were only two statues at the altar. Where is the other one?',6);}
     const oldX=a.group.position.x,oldZ=a.group.position.z;
-    if(a.update(dt,camera,eyesClosed,sound,hasKey?4.2:3.2,grace<=0)){caught(a);break;}
+    if(a.update(dt,camera,eyesClosed,sound,hasKey?4.2:3.2,grace<=0,angels,lighting)){caught(a);break;}
     if(world&&(a.group.position.x!==oldX||a.group.position.z!==oldZ))world.moon.shadow.needsUpdate=true;
   }
   if(mode==='playing'){
-    const events=horror.update(dt,{angels:angels.map(a=>({x:a.group.position.x,z:a.group.position.z,pose:a.pose,observed:a.observed,active:a.active,distance:a.group.position.distanceTo(player)})),running:moving&&running,inNave:Math.abs(player.x)<7&&player.z<6,powered,lightOn});
+    const events=horror.update(dt,{angels:angels.map(a=>({x:a.group.position.x,z:a.group.position.z,pose:a.pose,observed:a.observed,active:a.active,distance:a.group.position.distanceTo(player)})),running:moving&&running,powered,lightOn});
     for(const event of events){
       if(event==='realization')sound.realize();
-      if(event==='warning'){sound.warning();grace=Math.max(grace,8.5);}
+      if(event==='warning'){
+        sound.warning();grace=Math.max(grace,OPENING_TIMING.darkAt-elapsed+OPENING_TIMING.flashlightGrace);
+        if(powered){
+          powered=false;checkpoint.powered=false;stage=hasKey?2:0;
+          $('objective').textContent=objectives[stage];subtitle('The power just died.',4);
+        }
+      }
       if(event==='dark'&&!lightOn)subtitle('My flashlight.',3);
     }
     world?.candleLights.forEach((light,i)=>{
@@ -187,8 +210,11 @@ function frame(now:number){
   const beam=torch.update(mode==='paused'?0:dt,playingView&&lightOn,elapsed,walking,horror.fear);
   flashlight.position.copy(camera.position).add(new THREE.Vector3(.27,-.25,-.68).applyQuaternion(camera.quaternion));flashlight.target.position.copy(camera.position).addScaledVector(forward,12);
   // Stable light/shadow counts avoid a shader compilation hitch on the first draw.
-  flashlight.intensity=playingView&&lightOn?24*beam:0;flashlight.shadow.needsUpdate=flashlight.intensity>.01;
-  fill.position.copy(camera.position);fill.intensity=mode==='menu'?.2:THREE.MathUtils.lerp(.28,.018,horror.blackout);
+  flashlight.intensity=playingView&&lightOn?flashlightPower*beam:0;
+  // Allocate a valid depth map even with the torch stowed. An uninitialized
+  // shadow sampler can invalidate the room's lit materials on a fresh load.
+  flashlight.shadow.needsUpdate=flashlight.shadow.map===null||flashlight.intensity>.01;
+  fill.position.copy(camera.position);fill.intensity=mode==='menu'?.2:.28*(1-THREE.MathUtils.smoothstep(horror.blackout,0,.8));
   if(world)world.update(mode==='menu'?t:elapsed,powered,horror.blackout);film.uniforms.time.value=t%1000;
   renderer.info.reset();composer.render();
 }

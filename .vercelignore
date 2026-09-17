@@ -1,0 +1,15 @@
+.env*
+.git/
+.github/
+assets/source/
+docs/
+output/
+tools/
+tests/
+node_modules/
+dist/
+*.log
+*.blend*
+*.pem
+*.key
+asset.html

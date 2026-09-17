@@ -207,7 +207,9 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   const key=new THREE.Group();key.position.set(-12.7,1.0,7);scene.add(key);
   box(1.2,.12,1.5,-12.7,.88,7,wood,true);for(const z of [6.4,7.6])box(.1,.85,.1,-12.7,.42,z,wood);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(.08,.018,8,20),brass);ring.rotation.x=-Math.PI/2;key.add(ring);meshBox(.022,.025,.24,0,0,.17,brass,key);meshBox(.07,.03,.03,.025,0,.27,brass,key);
-  const keyGlow=new THREE.PointLight(0xdcc494,1.2,2,2);keyGlow.position.set(0,.4,0);key.add(keyGlow);
+  // Keep this light outside the collectible: hiding a light's parent changes
+  // the shader light count and recompiles the room at the moment of pickup.
+  const keyGlow=new THREE.PointLight(0xdcc494,1.2,2,2);keyGlow.name='Gate key glow';keyGlow.position.copy(key.position).y+=.4;scene.add(keyGlow);
   const note=new THREE.Group();note.position.set(6.8,1.0,10.7);scene.add(note);
   box(.9,.12,.8,6.8,.9,10.7,wood,true);box(.1,.9,.1,6.8,.45,10.7,wood);
   const paper=new THREE.Mesh(new THREE.PlaneGeometry(.38,.5),new THREE.MeshStandardMaterial({color:0xb6ae91,roughness:1}));paper.rotation.x=-Math.PI/2;paper.rotation.z=.16;note.add(paper);
@@ -236,6 +238,8 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     const g=new THREE.PlaneGeometry(.13,.23);g.translate(x,y+height+.09,z);fireGeometries.push(g);const g2=g.clone();g2.translate(-x,-y-height-.09,-z);g2.rotateY(Math.PI/2);g2.translate(x,y+height+.09,z);fireGeometries.push(g2);
   }
   for(const x of [-6.1,6.1])for(const z of [-11,-4,4,11]){
+    // The stem, tray and arms occupy real floor space for players and pursuers.
+    obstacles.push({x,z,w:.5,d:.4,h:2.35});
     cylinder(.19,.09,.12,x,.06,z,brass);cylinder(.04,.035,1.7,x,.95,z,brass);cylinder(.2,.2,.055,x,1.8,z,brass);
     for(let i=-1;i<=1;i++){candle(x+i*.19,1.83,z,.18+(1-Math.abs(i))*.1);if(i)line([new THREE.Vector3(x,1.4,z),new THREE.Vector3(x+i*.19,1.55,z),new THREE.Vector3(x+i*.19,1.82,z)],.018,brass);}
     const l=new THREE.PointLight(0xffbd73,10,7,2);l.position.set(x,2.15,z);scene.add(l);candleLights.push(l);
@@ -253,7 +257,7 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   const fire=new THREE.Mesh(mergeGeometries(fireGeometries),flameMaterial);scene.add(fire);
   const smokeGeometry=new THREE.BufferGeometry();smokeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(candleLocations.flatMap(p=>p.toArray()),3));
   const extinguished=new Float32Array(candleLocations.length).fill(1e6);smokeGeometry.setAttribute('extinguished',new THREE.BufferAttribute(extinguished,1));
-  const smokeMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{time:{value:0}},vertexShader:`attribute float extinguished; uniform float time; varying float vAge; void main(){vAge=time-extinguished;vec3 p=position;float age=max(0.,vAge);p.y+=age*.13;p.x+=sin(age*2.3+position.z)*age*.035;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp((38.+age*24.)/-mv.z,1.,60.);}`,fragmentShader:`varying float vAge;void main(){if(vAge<0.||vAge>5.)discard;vec2 p=(gl_PointCoord-.5)*2.;float shape=pow(max(0.,1.-dot(p,p)),2.);gl_FragColor=vec4(.38,.42,.43,shape*.16*exp(-vAge*.8)*smoothstep(0.,.15,vAge));}`});
+  const smokeMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{time:{value:0},strength:{value:1}},vertexShader:`attribute float extinguished; uniform float time; varying float vAge; void main(){vAge=time-extinguished;vec3 p=position;float age=max(0.,vAge);p.y+=age*.13;p.x+=sin(age*2.3+position.z)*age*.035;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp((38.+age*24.)/-mv.z,1.,60.);}`,fragmentShader:`uniform float strength;varying float vAge;void main(){if(vAge<0.||vAge>5.)discard;vec2 p=(gl_PointCoord-.5)*2.;float shape=pow(max(0.,1.-dot(p,p)),2.);gl_FragColor=vec4(.38,.42,.43,shape*.16*strength*exp(-vAge*.8)*smoothstep(0.,.15,vAge));}`});
   const smoke=new THREE.Points(smokeGeometry,smokeMaterial);smoke.frustumCulled=false;scene.add(smoke);
   // Hanging sanctuary banners and iron chandeliers break up the repeated bays.
   const fabric=new THREE.MeshStandardMaterial({color:0x35282a,roughness:1,side:THREE.DoubleSide});
@@ -308,8 +312,9 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     for(const o of [...group.children]){const m=o as THREE.Mesh;if(!m.isMesh||Array.isArray(m.material))continue;m.updateMatrix();if(!groups.has(m.material))groups.set(m.material,[]);groups.get(m.material)!.push(m.geometry.clone().applyMatrix4(m.matrix));group.remove(m);m.geometry.dispose();}
     for(const [mat,parts]of groups){const merged=new THREE.Mesh(mergeGeometries(parts),mat);merged.castShadow=true;merged.receiveShadow=true;group.add(merged);parts.forEach(g=>g.dispose());}
   }
-  let emergencyLevel=0,lastTime=0;
-  return {stations,reflection,moon,ambient,candleLights,update(time:number,powered:boolean,blackout=0){
+  const background=scene.background instanceof THREE.Color?scene.background.clone():null,fog=scene.fog?.color.clone();
+  let emergencyLevel=0,lastTime=0,isPitchBlack=false;
+  return {stations,reflection,moon,ambient,candleLights,emergencyLights,get isPitchBlack(){return isPitchBlack;},update(time:number,powered:boolean,blackout=0){
     flameMaterial.uniforms.time.value=time;flameMaterial.uniforms.blackout.value=blackout;beamMaterial.uniforms.time.value=time;smokeMaterial.uniforms.time.value=time;
     candleLights.forEach((l,i)=>l.intensity=candleStrength(l.position.z,blackout)*(i===8?15:10)*(1+Math.sin(time*5+i*7)*.06+Math.sin(time*11+i)*.025));
     let smokeChanged=false;candleLocations.forEach((p,i)=>{
@@ -318,15 +323,22 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     });if(smokeChanged)smokeGeometry.attributes.extinguished.needsUpdate=true;
     const darkness=THREE.MathUtils.smoothstep(blackout,0,.8);
     if(time<lastTime)emergencyLevel=powered?1:0;
-    emergencyLevel=THREE.MathUtils.damp(emergencyLevel,powered?1:0,2.5,Math.min(.05,Math.max(0,time-lastTime)));lastTime=time;
-    ambient.intensity=THREE.MathUtils.lerp(.52,.022,darkness)+emergencyLevel*.025;
-    moon.intensity=THREE.MathUtils.lerp(135,14,darkness);angelRim.intensity=THREE.MathUtils.lerp(35,3,darkness);
-    moonShafts.forEach(l=>l.intensity=THREE.MathUtils.lerp(65,4,darkness));
-    windowMat.emissiveIntensity=THREE.MathUtils.lerp(.6,.055,darkness);gm.emissiveIntensity=THREE.MathUtils.lerp(1.4,.16,darkness);
+    // A tripped supply cuts the entrance fixtures and their emissive bulbs together.
+    emergencyLevel=powered?THREE.MathUtils.damp(emergencyLevel,1,2.5,Math.min(.05,Math.max(0,time-lastTime))):0;lastTime=time;
+    ambient.intensity=.52*(1-darkness)+emergencyLevel*.025;
+    moon.intensity=135*(1-darkness);angelRim.intensity=35*(1-darkness);
+    moonShafts.forEach(l=>l.intensity=65*(1-darkness));
+    windowMat.emissiveIntensity=.6*(1-darkness);gm.emissiveIntensity=1.4*(1-darkness);
     beamMaterial.uniforms.strength.value=1-darkness;
-    dust.material.opacity=THREE.MathUtils.lerp(.35,.035,darkness);
-    scene.environmentIntensity=THREE.MathUtils.lerp(.075,.005,darkness);
+    smokeMaterial.uniforms.strength.value=1-darkness;
+    dust.material.opacity=.35*(1-darkness);keyGlow.intensity=key.visible?1.2*(1-darkness):0;
+    scene.environmentIntensity=.075*(1-darkness);
+    if(background&&scene.background instanceof THREE.Color)scene.background.copy(background).multiplyScalar(1-darkness);
+    if(fog&&scene.fog)scene.fog.color.copy(fog).multiplyScalar(1-darkness);
     emergencyLights.forEach(l=>l.intensity=emergencyLevel*10);bulbMaterial.emissiveIntensity=emergencyLevel*1.4;
+    // Only declare darkness after the last candle and every silhouette source
+    // are gone. The player torch is handled separately by the observation check.
+    isPitchBlack=blackout===1&&!powered&&emergencyLevel===0;
     dust.rotation.y=Math.sin(time*.025)*.02;dust.position.y=Math.sin(time*.06)*.08;
     cabinet.setPowered(powered);
     key.rotation.y=time*.25;

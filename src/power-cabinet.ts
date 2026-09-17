@@ -73,7 +73,7 @@ export function createPowerCabinet(){
     const a=Math.PI*(.8+i/24*1.4),r=i%4===0?77:85;
     mc.beginPath();mc.moveTo(128+Math.cos(a)*r,132+Math.sin(a)*r);mc.lineTo(128+Math.cos(a)*98,132+Math.sin(a)*98);mc.stroke();
   }
-  mc.font='bold 31px Georgia';mc.textAlign='center';mc.fillText('V',128,177);mc.font='17px Georgia';mc.fillText('0 — 250',128,205);
+  mc.font='bold 31px Georgia';mc.textAlign='center';mc.fillText('V',128,177);mc.font='17px Georgia';mc.fillText('0 - 250',128,205);
   const meterMap=new THREE.CanvasTexture(meterCanvas);meterMap.colorSpace=THREE.SRGBColorSpace;meterMap.anisotropy=8;
   disc(.12,.045,-.165,1.711,.191,gasket);
   add(new THREE.TorusGeometry(.108,.009,8,40),steel,-.165,1.711,.217);
@@ -97,7 +97,7 @@ export function createPowerCabinet(){
   const grip=new THREE.Mesh(new RoundedBoxGeometry(.112,.065,.068,2,.014),bakelite);grip.position.y=.15;lever.add(grip);
   for(const part of [stem,grip]){part.castShadow=true;part.receiveShadow=true;}
   disc(.049,.021,-.223,1.333,.191,steel);disc(.038,.024,-.223,1.333,.211,gasket);
-  const lamp=new THREE.Mesh(new THREE.SphereGeometry(.03,20,12),new THREE.MeshBasicMaterial({color:0x9d4b24}));
+  const lamp=new THREE.Mesh(new THREE.SphereGeometry(.03,20,12),new THREE.MeshStandardMaterial({color:0x9d4b24,roughness:.35,emissive:0x9dbe70,emissiveIntensity:0}));
   lamp.scale.z=.45;lamp.position.set(-.223,1.333,.233);group.add(lamp);
   label(['SUPPLY'],.195,.057,-.223,1.244,.174,48);
   label(['240 V   /   KEEP DRY'],.49,.083,0,.981,.174,40);
@@ -140,6 +140,7 @@ export function createPowerCabinet(){
   function setPowered(powered:boolean){
     if(previous===powered)return;previous=powered;
     lamp.material.color.set(powered?0x9dbe70:0x9d4b24);
+    lamp.material.emissiveIntensity=powered?1:0;
     lever.rotation.x=powered?.45:Math.PI-.45;
     needle.rotation.z=powered?-.8:2.1;
   }

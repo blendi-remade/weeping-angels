@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { canReveal,type ObservationLighting } from './illumination';
 
 const axes=['x','y','z'] as const;
 const reflectionHeight=.006;
@@ -31,14 +32,14 @@ function fullyHidden(from:THREE.Vector3,points:THREE.Vector3[],solids:readonly T
 }
 
 /** Conservative visibility: uncertainty freezes the angel, never releases it. */
-export function isObserved(camera:THREE.PerspectiveCamera,bounds:THREE.Box3,eyesClosed:boolean,solids:readonly THREE.Box3[]=[]){
+export function isObserved(camera:THREE.PerspectiveCamera,bounds:THREE.Box3,eyesClosed:boolean,solids:readonly THREE.Box3[]=[],lighting?:ObservationLighting){
   if(eyesClosed)return false;
   camera.updateMatrixWorld();
   const origin=camera.getWorldPosition(new THREE.Vector3());
   const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
   // Small safety margin for pixels at screen edges and numerical precision.
   const padded=bounds.clone().expandByScalar(.035),points=corners(padded);
-  if(frustum.intersectsBox(padded)&&!fullyHidden(origin,points,solids))return true;
+  if(frustum.intersectsBox(padded)&&!fullyHidden(origin,points,solids)&&canReveal(padded,origin,lighting))return true;
   if(!camera.userData.reflectionEnabled||origin.y<=reflectionHeight)return false;
 
   const reflected=padded.clone();
@@ -55,5 +56,5 @@ export function isObserved(camera:THREE.PerspectiveCamera,bounds:THREE.Box3,eyes
   }
   if(footprint.max.x< -7.7||footprint.min.x>7.7||footprint.max.z< -15.7||footprint.min.z>15.7)return false;
   const mirroredEye=origin.clone();mirroredEye.y=2*reflectionHeight-origin.y;
-  return !fullyHidden(mirroredEye,points,solids);
+  return !fullyHidden(mirroredEye,points,solids)&&canReveal(padded,mirroredEye,lighting);
 }

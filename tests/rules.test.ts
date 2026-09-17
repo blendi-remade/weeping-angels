@@ -31,3 +31,12 @@ test('a visible floor reflection also freezes an angel',()=>{
   assert.equal(isObserved(camera,angelBounds(),false),true);
   assert.equal(isObserved(camera,angelBounds(),true),false);
 });
+
+test('a narrow floor fixture blocks the walking body and routes a pursuer around it',()=>{
+  obstacles.push({x:0,z:0,w:.5,d:.4,h:2.35});
+  try{
+    assert(!canStand(0,0,.23));assert(!canStand(.3,0,.31));
+    const path=pathfind({x:0,z:-2},{x:0,z:2});assert(path.length>0);
+    assert(path.some(p=>Math.abs(p.x)>.6));assert(path.every(p=>canStand(p.x,p.z,.36)));
+  }finally{obstacles.length=0;}
+});

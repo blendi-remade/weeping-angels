@@ -104,89 +104,72 @@
   ],
   "productionJobs": [
     {
-      "record": "assets/source/angel-mesh.job.json",
-      "endpoint": "meshy/v7/image-to-3d",
-      "requestId": "01a0a7a5-52f7-7031-9471-5d6bdbb4edd8"
+      "asset": "angel-mesh",
+      "endpoint": "meshy/v7/image-to-3d"
     },
     {
-      "record": "assets/source/angel-reference.job.json",
-      "endpoint": "fal-ai/nano-banana-2",
-      "requestId": "01a0a7a4-c487-72f0-b4ab-8599f99d72d5"
+      "asset": "angel-reference",
+      "endpoint": "fal-ai/nano-banana-2"
     },
     {
-      "record": "assets/source/breath-calm.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b6d-7e90-a500-30147150cc5b"
+      "asset": "breath-calm",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/breath-strained.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b6f-7c20-a936-37e553aa7328"
+      "asset": "breath-strained",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/candle-snuff.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070"
+      "asset": "candle-snuff",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/chapel-ambience.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0a7c1-916c-7912-a235-8dca48999cbb"
+      "asset": "chapel-ambience",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/flashlight-draw.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b72-7221-9cd6-866a8c2018e3"
+      "asset": "flashlight-draw",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/floor.job.json",
-      "endpoint": "fal-ai/patina/material",
-      "requestId": "01a0a7a5-7be5-74b2-97cf-e05d8da816d4"
+      "asset": "floor",
+      "endpoint": "fal-ai/patina/material"
     },
     {
-      "record": "assets/source/iron-gate.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0a7c1-9170-7710-b29e-cb068914fdab"
+      "asset": "iron-gate",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/limestone.job.json",
-      "endpoint": "fal-ai/patina/material",
-      "requestId": "01a0a7a5-7be6-7ca3-8fbc-8364904cbbb8"
+      "asset": "limestone",
+      "endpoint": "fal-ai/patina/material"
     },
     {
-      "record": "assets/source/pew-mesh.job.json",
-      "endpoint": "meshy/v7/image-to-3d",
-      "requestId": "01a0a7b5-ea4e-76d0-990e-e3d550ec05b4"
+      "asset": "pew-mesh",
+      "endpoint": "meshy/v7/image-to-3d"
     },
     {
-      "record": "assets/source/pew-reference.job.json",
-      "endpoint": "fal-ai/nano-banana-2",
-      "requestId": "01a0a7b4-fc2e-7e91-a563-0f0546f55488"
+      "asset": "pew-reference",
+      "endpoint": "fal-ai/nano-banana-2"
     },
     {
-      "record": "assets/source/stone-scrape.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0a7c1-9170-7e73-b4f2-b83f24f96788"
+      "asset": "stone-scrape",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/stone-shift-a-v2.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0aca1-6cc6-7303-9f01-6a07d7195f5e"
+      "asset": "stone-shift-a-v2",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/stone-shift-a.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b67-7630-b070-def8a16efe26"
+      "asset": "stone-shift-a",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/stone-shift-b.job.json",
-      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
-      "requestId": "01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5"
+      "asset": "stone-shift-b",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2"
     },
     {
-      "record": "assets/source/wood.job.json",
-      "endpoint": "fal-ai/patina/material",
-      "requestId": "01a0a7a5-7be3-7b33-8f72-ad00fe1ac700"
+      "asset": "wood",
+      "endpoint": "fal-ai/patina/material"
     }
   ]
 }
