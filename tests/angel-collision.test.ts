@@ -36,12 +36,12 @@ test('a large step cannot tunnel through another angel even if its endpoint is c
 
 test('pathfinding routes around an inactive statue without pushing or changing it',()=>{
   const moving=statue(0,-7),idle=statue(0,0);idle.active=false;const before=state(idle),view=camera(0,7);
-  let sideways=0;
-  for(let frame=0;frame<450;frame++){
-    moving.update(1/30,view,true,silent,4.2,true,[moving,idle]);separated(moving,idle);
+  let sideways=0,caught=false;
+  for(let frame=0;frame<450&&!caught;frame++){
+    caught=moving.update(1/30,view,true,silent,4.2,true,[moving,idle]);separated(moving,idle);
     sideways=Math.max(sideways,Math.abs(moving.group.position.x));
   }
-  assert(sideways>moving.collisionRadius+idle.collisionRadius);assert(moving.group.position.z>5);
+  assert(sideways>moving.collisionRadius+idle.collisionRadius);assert(caught,'pursuer must reach the player after routing around the statue');
   assert.deepEqual(state(idle),before);
 });
 
@@ -61,8 +61,9 @@ test('a blocked narrow passage makes the follower wait, then resume when cleared
     for(let frame=0;frame<120;frame++){follower.update(1/30,view,true,silent,4.2,true,[follower,leader]);separated(follower,leader);}
     assert(follower.group.position.z< -2);assert.equal(leader.group.position.z,0);
     leader.group.position.set(6,0,-10);
-    for(let frame=0;frame<240;frame++){follower.update(1/30,view,true,silent,4.2,true,[follower,leader]);separated(follower,leader);}
-    assert(follower.group.position.z>4);
+    let caught=false;
+    for(let frame=0;frame<240&&!caught;frame++){caught=follower.update(1/30,view,true,silent,4.2,true,[follower,leader]);separated(follower,leader);}
+    assert(caught,'clearing the passage must let the follower reach the player');
   }finally{obstacles.length=0;}
 });
 

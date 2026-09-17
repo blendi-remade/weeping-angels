@@ -9,13 +9,38 @@ import { isObserved } from './visibility';
 import type { ObservationLighting } from './illumination';
 export { isObserved } from './visibility';
 
+// Contact is a separate rule from observation: once inside this zone, looking
+// at the statue cannot rescue the player or make a stalled pursuer harmless.
+export const ANGEL_CAPTURE_DISTANCE=1.1;
+
+// Narrow sections keep the empty corners between extended hands and wide wings
+// out of sight checks. Each triangle belongs wholly to one enclosing box, so
+// even a visible sliver remains covered. Built once per pose, never per frame.
+function poseSections(root:THREE.Object3D,bounds:THREE.Box3){
+  const sections=Array.from({length:5},()=>new THREE.Box3()),width=Math.max(.001,bounds.max.x-bounds.min.x);
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+  root.traverse(object=>{
+    const mesh=object as THREE.Mesh;if(!mesh.isMesh)return;
+    const geometry=mesh.geometry,positions=geometry.attributes.position,vertices=new Float64Array(positions.count*3);
+    for(let i=0;i<positions.count;i++){mesh.getVertexPosition(i,a).applyMatrix4(mesh.matrixWorld);a.toArray(vertices,i*3);}
+    const index=geometry.index,count=index?.count??positions.count;
+    for(let i=0;i+2<count;i+=3){
+      a.fromArray(vertices,(index?index.getX(i):i)*3);b.fromArray(vertices,(index?index.getX(i+1):i+1)*3);c.fromArray(vertices,(index?index.getX(i+2):i+2)*3);
+      const section=sections[THREE.MathUtils.clamp(Math.floor(((a.x+b.x+c.x)/3-bounds.min.x)/width*sections.length),0,sections.length-1)];
+      section.expandByPoint(a).expandByPoint(b).expandByPoint(c);
+    }
+  });
+  return sections.filter(section=>!section.isEmpty());
+}
+
 export class Angel {
   private static nextAudioId=0;private audioId=Angel.nextAudioId++;
   group=new THREE.Group();active=false;seen=false;observed=false;pose=0;path:Point[]=[];pathTimer=0;stepTimer=0;rest=new Map<THREE.Bone,THREE.Quaternion>();bones:THREE.Bone[]=[];lastObserved=true;
   private localObservationBounds=new THREE.Box3();
   private localPoseBounds:THREE.Box3[]=[];
+  private localPoseSections:THREE.Box3[][]=[];
   readonly collisionRadius:number;
-  readonly captureReach:number;
+  readonly captureReach=ANGEL_CAPTURE_DISTANCE;
   constructor(model:THREE.Object3D,scene:THREE.Scene,public start:THREE.Vector3){
     const copy=clone(model);copy.updateMatrixWorld(true);copy.traverse(o=>{if((o as THREE.SkinnedMesh).isSkinnedMesh){const m=o as THREE.SkinnedMesh;m.skeleton.update();m.computeBoundingBox();}});
     const bounds=new THREE.Box3();copy.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){if((m as THREE.SkinnedMesh).isSkinnedMesh)bounds.union((m as THREE.SkinnedMesh).boundingBox!.clone().applyMatrix4(m.matrixWorld));else bounds.union(new THREE.Box3().setFromBufferAttribute(m.geometry.attributes.position as THREE.BufferAttribute).applyMatrix4(m.matrixWorld));}});
@@ -37,19 +62,21 @@ export class Angel {
       copy.traverse(o=>{if((o as THREE.SkinnedMesh).isSkinnedMesh)(o as THREE.SkinnedMesh).skeleton.update();});
       const poseBounds=new THREE.Box3().setFromObject(this.group,true);
       this.localPoseBounds.push(poseBounds);poses.union(poseBounds);
+      this.localPoseSections.push(poseSections(this.group,poseBounds));
     }
     const radius=Math.hypot(Math.max(Math.abs(poses.min.x),Math.abs(poses.max.x)),Math.max(Math.abs(poses.min.z),Math.abs(poses.max.z)));
     // A full-pose cylinder keeps wings and reaching hands clear at every yaw.
     this.collisionRadius=radius;
-    // The model faces +Z. An extended hand can touch the player's .23 m body
-    // before either center reaches the old 1.05 m capture threshold.
-    this.captureReach=Math.max(1.05,poses.max.z+.23);
     this.localObservationBounds.set(new THREE.Vector3(-radius,poses.min.y,-radius),new THREE.Vector3(radius,poses.max.y,radius));
     this.group.position.copy(start);this.group.rotation.y=0;scene.add(this.group);this.setPose(0);
   }
   observationBounds(position=this.group.position){return this.localObservationBounds.clone().translate(position);}
   private posedBounds(position=this.group.position,pose=this.pose,yaw=this.group.rotation.y){
     return this.localPoseBounds[pose].clone().applyMatrix4(new THREE.Matrix4().makeRotationY(yaw)).translate(position);
+  }
+  private posedSections(position=this.group.position,pose=this.pose,yaw=this.group.rotation.y){
+    const rotation=new THREE.Matrix4().makeRotationY(yaw);
+    return this.localPoseSections[pose].map(box=>box.clone().applyMatrix4(rotation).translate(position));
   }
   private canCatch(camera:THREE.Camera){
     return Math.hypot(this.group.position.x-camera.position.x,this.group.position.z-camera.position.z)<=this.captureReach&&
@@ -81,12 +108,16 @@ export class Angel {
     // envelope includes empty space around the wings and can cross the camera
     // while the entire statue is behind the player, making capture impossible.
     const bounds=this.posedBounds();
-    const visible=isObserved(camera,bounds,eyesClosed,sightBlockers,lighting);this.observed=visible;
+    const visible=isObserved(camera,bounds,eyesClosed,sightBlockers,lighting)&&
+      this.posedSections().some(section=>isObserved(camera,section,eyesClosed,sightBlockers,lighting));this.observed=visible;
     const dist=Math.hypot(this.group.position.x-camera.position.x,this.group.position.z-camera.position.z);
     if(visible)this.seen=true;
     if(visible&&!this.lastObserved&&dist<5&&this.active)sound.reveal();this.lastObserved=visible;
-    if(!this.active||visible||!allowMovement){sound.stopScrape?.(this.audioId);return false;}
+    if(!this.active||!allowMovement){sound.stopScrape?.(this.audioId);return false;}
+    // Resolve contact before visibility, navigation, or statue separation can
+    // stop movement. Solid cover still blocks contact in canCatch().
     if(this.canCatch(camera))return true;
+    if(visible){sound.stopScrape?.(this.audioId);return false;}
     this.pathTimer-=dt;
     if(this.pathTimer<=0){this.path=pathfind(this.group.position,camera.position,(from,to)=>this.hasSpace(from,to,others));this.pathTimer=.65;}
     if(this.path.length){
@@ -100,10 +131,15 @@ export class Angel {
         // Poses swap instantaneously. Contain both rendered poses, including
         // their facing directions, and the translation between them.
         const swept=bounds.clone().union(this.posedBounds(next,nextPose,nextYaw));
+        let stepVisible=isObserved(camera,swept,eyesClosed,sightBlockers,lighting);
+        if(stepVisible&&nextPose===this.pose){
+          const nextSections=this.posedSections(next,nextPose,nextYaw);
+          stepVisible=this.posedSections().some((section,i)=>isObserved(camera,section.union(nextSections[i]),eyesClosed,sightBlockers,lighting));
+        }
         if(!this.hasSpace(this.group.position,next,others)){
           // Replan promptly, but never push either statue to resolve contact.
           this.pathTimer=Math.min(this.pathTimer,.15);sound.stopScrape?.(this.audioId);
-        }else if(canStand(nx,nz,.31)&&!isObserved(camera,swept,eyesClosed,sightBlockers,lighting)){
+        }else if(canStand(nx,nz,.31)&&!stepVisible){
           this.group.position.copy(next);this.group.rotation.y=nextYaw;
           this.setPose(nextPose);this.stepTimer-=dt;
           if(this.stepTimer<=0){sound.scrape(nx,nz,this.audioId);this.stepTimer=1.1;}

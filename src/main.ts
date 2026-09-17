@@ -69,7 +69,9 @@ function finish(won:boolean){
   if(won)sound.complete();else{$('damage').style.opacity='0';}
 }
 function caught(angel:Angel){
-  angel.setPose(3);angel.group.rotation.y=Math.atan2(player.x-angel.group.position.x,player.z-angel.group.position.z);if(world)world.moon.shadow.needsUpdate=true;
+  // Proximity can be fatal while the angel is watched, but visible stone must
+  // remain still even as the death sequence begins.
+  if(!angel.observed){angel.setPose(3);angel.group.rotation.y=Math.atan2(player.x-angel.group.position.x,player.z-angel.group.position.z);if(world)world.moon.shadow.needsUpdate=true;}
   camera.lookAt(angel.group.position.x,2.36,angel.group.position.z);caughtTime=1.15;setMode('caught');sound.death();$('damage').style.opacity='.55';
 }
 function blink(){if(mode!=='playing'||blinkTime>0||blinkCooldown>0)return;blinkTime=.29;blinkCooldown=.9;eye=1;blinkCount++;$('blink').classList.add('closed');sound.blink();}

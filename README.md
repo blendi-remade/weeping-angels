@@ -18,6 +18,8 @@ Desktop keyboard and mouse required. Headphones recommended. Includes sudden dar
 
 The angels freeze whenever any part of them can be seen, including a wing beside a column or a reflection on the damp floor. Looking away or blinking gives them a chance to move. In complete darkness, looking in their direction is not enough: you need light to see them.
 
+Keep your distance: an active angel within **1.1 metres** catches you even if you are looking at it. Walls and solid cover block contact. Observation prevents movement; it cannot save you after an angel is already within reach.
+
 The opening reaches full darkness about **10 seconds into active gameplay**. A flashlight reveals where the statues have gone. Stone scrapes are positional, breathing becomes strained, and a heartbeat starts after you witness an angel change position or pose.
 
 ![An angel caught in the flashlight beam after the chapel goes dark.](docs/media/flashlight.jpg)

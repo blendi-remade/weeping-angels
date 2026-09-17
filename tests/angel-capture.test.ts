@@ -42,11 +42,38 @@ test('the shipped angel catches a player looking away, in ambient light or with 
   }
 });
 
-test('an illuminated angel within reach stays frozen and harmless until the player blinks',()=>{
-  const a=angel(),c=camera(1.1,Math.PI),before=state(a);
-  for(let frame=0;frame<30;frame++)assert.equal(a.update(1/60,c,false,silent,3.2,true,[a],torch(c)),false);
-  assert(a.observed);assert.deepEqual(state(a),before);
-  assert.equal(a.update(1/60,c,true,silent,3.2,true,[a],torch(c)),true);
+test('an illuminated angel outside contact range stays frozen and harmless',()=>{
+  for(const z of [1.15,1.8,2]){
+    const a=angel(),c=camera(z,Math.PI),before=state(a);
+    for(let frame=0;frame<30;frame++)assert.equal(a.update(1/60,c,false,silent,3.2,true,[a],torch(c)),false);
+    assert(a.observed);assert.deepEqual(state(a),before);
+  }
+});
+
+test('close contact is lethal even when the angel is illuminated and watched, without moving it',()=>{
+  for(const z of [.75,1,1.1]){
+    const a=angel(),c=camera(z,Math.PI),before=state(a);
+    assert.equal(a.update(1/60,c,false,silent,3.2,true,[a],torch(c)),true);
+    assert(a.observed);assert.deepEqual(state(a),before);
+  }
+});
+
+test('looking at a nearby wall cannot make a close angel harmless',()=>{
+  const a=angel();a.group.position.z=14.25;const c=camera(15.3);
+  c.lookAt(0,.3,16);c.updateMatrixWorld();
+  obstacles.push({x:0,z:16,w:16,d:.4,h:6});
+  sightBlockers.push(new THREE.Box3(new THREE.Vector3(-8,0,15.8),new THREE.Vector3(8,6,16.2)));
+  try{assert.equal(a.update(1/60,c,false,silent,3.2,true,[a],torch(c)),true);}
+  finally{obstacles.length=0;sightBlockers.length=0;}
+});
+
+test('contact resolves with an empty route and another angel blocking further approach',()=>{
+  const a=angel(),other=angel(),c=camera(1);
+  other.group.position.z=2.7;a.path=[];a.pathTimer=10;
+  const before=state(a),otherBefore=state(other);
+  assert(a.group.position.distanceTo(other.group.position)>a.collisionRadius+other.collisionRadius+.06);
+  assert.equal(a.update(1/60,c,false,silent,3.2,true,[a,other],dark),true);
+  assert.deepEqual(state(a),before);assert.deepEqual(state(other),otherBefore);
 });
 
 test('looking directly at an unlit angel does not prevent capture in pitch darkness',()=>{
