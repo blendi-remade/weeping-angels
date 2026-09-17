@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+  "input": {
+    "text": "Close isolated foley of a cluster of small candle flames abruptly extinguished by a brief cold breath of air. Soft short airy flutter then delicate sizzling wicks and a tiny fading hiss. Subtle intimate texture, dry recording. No music, no speech, no breathing person, no fire roar, no explosion.",
+    "duration_seconds": 1.4,
+    "loop": false,
+    "prompt_influence": 0.55,
+    "output_format": "mp3_44100_192"
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070",
+  "response_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070",
+  "status_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 1
+}

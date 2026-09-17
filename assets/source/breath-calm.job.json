@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+  "input": {
+    "text": "Isolated close microphone human breathing foley for a first person horror game. One adult breathing quietly through the nose, with soft controlled exhales, trying to stay silent. Intimate and realistic, restrained unease. Several slow complete breath cycles, even level, seamless loop. Dry studio recording, no room ambience, no words, no whispering, no music, no heartbeat, no gasping, no wind.",
+    "duration_seconds": 8,
+    "loop": true,
+    "prompt_influence": 0.55,
+    "output_format": "mp3_44100_192"
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0ac9e-4b6d-7e90-a500-30147150cc5b",
+  "response_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6d-7e90-a500-30147150cc5b",
+  "status_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6d-7e90-a500-30147150cc5b/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6d-7e90-a500-30147150cc5b/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 1
+}

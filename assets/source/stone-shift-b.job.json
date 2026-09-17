@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+  "input": {
+    "text": "One short horrible movement of a heavy ancient carved stone statue: a low rough grinding scrape over stone, with a few small sharp stone chips crumbling and falling, ending in a heavy stone foot settling. Texture of rough limestone, dense and physical, close dry foley. A single isolated movement. No music, no speech, no breathing, no monster growl, no wind, no reverb.",
+    "duration_seconds": 1.9,
+    "loop": false,
+    "prompt_influence": 0.55,
+    "output_format": "mp3_44100_192"
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5",
+  "response_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5",
+  "status_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 2
+}

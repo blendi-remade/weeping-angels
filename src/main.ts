@@ -9,12 +9,15 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { makeWorld,canStand,type Station } from './world';
 import { loadAngels,type Angel } from './angels';
 import { Soundscape } from './audio';
+import { HorrorDirector,candleStrength } from './horror';
+import { createFlashlight } from './flashlight';
 
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
 const show=(id:string,v:boolean)=>$(id).classList.toggle('hidden',!v);
 const canvas=$<HTMLCanvasElement>('world');
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0c1319);scene.fog=new THREE.FogExp2(0x152129,.027);
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.06,65);camera.rotation.order='YXZ';
+scene.add(camera);const torch=createFlashlight(camera);
 camera.userData.reflectionEnabled=true;
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.35));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -24,8 +27,10 @@ const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scen
 const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight),.25,.55,.95);composer.addPass(bloom);composer.addPass(new OutputPass());
 const film=new ShaderPass({uniforms:{tDiffuse:{value:null},time:{value:0},stress:{value:0}},vertexShader:`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D tDiffuse;uniform float time;uniform float stress;varying vec2 vUv;float rand(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233))+time)*43758.5453);}void main(){vec2 uv=vUv;vec3 c=texture2D(tDiffuse,uv).rgb;float l=dot(c,vec3(.2126,.7152,.0722));c=mix(vec3(l),c,.82);c=pow(c,vec3(.98,1.,1.01));float vignette=1.-dot(uv-.5,uv-.5)*(.5+stress*.6);c*=vignette;c+=(rand(uv)-.5)*.017;gl_FragColor=vec4(c,1.);}`});composer.addPass(film);
 const flashlight=new THREE.SpotLight(0xffedd1,21,26,Math.PI/7,.75,1.7);flashlight.castShadow=true;flashlight.shadow.mapSize.set(1024,1024);flashlight.shadow.bias=-.0002;flashlight.shadow.normalBias=.015;scene.add(flashlight,flashlight.target);
+flashlight.shadow.autoUpdate=false;
 const fill=new THREE.PointLight(0xafc2c9,.7,4,2);scene.add(fill);
-const sound=new Soundscape();
+const sound=new Soundscape(),horror=new HorrorDirector();
+const snuffed=new Set<number>();let torchDrawn=false,walking=false;
 let world:Awaited<ReturnType<typeof makeWorld>>|undefined,angels:Angel[]=[],ready=false;
 type Mode='menu'|'playing'|'paused'|'caught'|'dead'|'won';let mode:Mode='menu';let caughtTime=0;
 let powered=false,hasKey=false,readNote=false,stage=0,elapsed=0,blinkCount=0,eye=1,blinkTime=0,blinkCooldown=0,autoBlink=true,lightOn=true,quality=true;
@@ -38,7 +43,9 @@ function notice(text:string){$('notice').textContent=text;$('notice').style.opac
 function subtitle(text:string,duration=6){$('subtitle').textContent=text;$('subtitle').style.opacity='1';subtitleTimer=duration;}
 function setMode(next:Mode){mode=next;show('menu',next==='menu');show('hud',next==='playing');show('pause',next==='paused');show('ending',next==='dead'||next==='won');keys.clear();hold=0;}
 function reset(resumeCheckpoint=false){
-  powered=resumeCheckpoint&&checkpoint.powered;hasKey=resumeCheckpoint&&checkpoint.hasKey;stage=hasKey?2:powered?1:0;readNote=false;secondIntro=false;elapsed=0;blinkCount=0;eye=1;blinkTime=0;blinkCooldown=0;grace=5;lightOn=true;yaw=0;pitch=0;player.set(0,1.68,13.1);hold=0;station=null;
+  powered=resumeCheckpoint&&checkpoint.powered;hasKey=resumeCheckpoint&&checkpoint.hasKey;stage=hasKey?2:powered?1:0;readNote=false;secondIntro=false;elapsed=0;blinkCount=0;eye=1;blinkTime=0;blinkCooldown=0;grace=5;lightOn=powered;yaw=0;pitch=0;player.set(0,1.68,13.1);hold=0;station=null;
+  horror.reset(powered);sound.reset();snuffed.clear();torchDrawn=powered;torch.reset(powered);walking=false;show('light-prompt',false);
+  if(powered)world?.candleLights.forEach((_,i)=>snuffed.add(i));
   if(resumeCheckpoint&&hasKey){player.set(-11.2,1.68,7);yaw=-Math.PI/2;}else if(resumeCheckpoint&&powered){player.set(11.5,1.68,-7);yaw=Math.PI/2;}
   angels.forEach(a=>a.reset());if(powered)angels[0].active=true;if(hasKey)angels[1].active=true;
   if(world){world.stations.find(s=>s.id==='key')!.object.visible=!hasKey;world.stations.find(s=>s.id==='gate')!.object.position.y=0;world.moon.shadow.needsUpdate=true;}
@@ -80,7 +87,7 @@ window.addEventListener('blur',pause);
 window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)&&mode==='playing')e.preventDefault();
   if(e.repeat)return;keys.add(e.code);if(e.code==='Escape'){if(mode==='playing')pause();else if(mode==='paused')resume();}
-  if(mode!=='playing')return;if(e.code==='Space')blink();if(e.code==='KeyF'){lightOn=!lightOn;sound.noiseHit(.07,950,.18);}if(e.code==='KeyH')document.body.classList.toggle('clean');
+  if(mode!=='playing')return;if(e.code==='Space')blink();if(e.code==='KeyF'){lightOn=!lightOn;sound.flashlight(lightOn&&!torchDrawn);if(lightOn)torchDrawn=true;}if(e.code==='KeyH')document.body.classList.toggle('clean');
 });
 window.addEventListener('keyup',e=>keys.delete(e.code));
 window.addEventListener('mousemove',e=>{
@@ -106,7 +113,7 @@ function interaction(dt:number){
   hold+=dt;$('interact-progress').style.width=`${Math.min(1,hold/seconds)*100}%`;
   if(hold<seconds)return;hold=0;keys.delete('KeyE');
   if(station.id==='power'){
-    powered=true;checkpoint.powered=true;stage=1;angels[0].active=true;grace=3;sound.switch();subtitle('The archive lock released. Somewhere, stone scrapes against stone.',7);$('objective').textContent=objectives[stage];
+    powered=true;checkpoint.powered=true;stage=1;angels[0].active=true;grace=3;sound.switch();subtitle('The service lights are on. The archive lock released.',6);$('objective').textContent=objectives[stage];
   }else if(station.id==='key'){
     hasKey=true;checkpoint.hasKey=true;stage=2;station.object.visible=false;angels[1].active=true;grace=2;sound.switch();subtitle('A second set of footsteps. You are not alone on the way back.',7);$('objective').textContent=objectives[stage];
   }else if(station.id==='gate'){
@@ -123,7 +130,7 @@ function update(dt:number){
   const running=keys.has('ShiftLeft')||keys.has('ShiftRight');
   forward.set(-Math.sin(yaw),0,-Math.cos(yaw));right.set(Math.cos(yaw),0,-Math.sin(yaw));direction.set(0,0,0);
   if(keys.has('KeyW')||keys.has('ArrowUp'))direction.add(forward);if(keys.has('KeyS')||keys.has('ArrowDown'))direction.sub(forward);if(keys.has('KeyD')||keys.has('ArrowRight'))direction.add(right);if(keys.has('KeyA')||keys.has('ArrowLeft'))direction.sub(right);
-  const moving=direction.lengthSq()>0;
+  const moving=direction.lengthSq()>0;walking=moving;
   if(moving){direction.normalize().multiplyScalar(dt*(running?3.65:2.25));const pieces=Math.ceil(direction.length()/.08);direction.divideScalar(pieces);
     const clear=(x:number,z:number)=>canStand(x,z,.23)&&angels.every(a=>Math.hypot(a.group.position.x-x,a.group.position.z-z)>.73);
     for(let i=0;i<pieces;i++){if(clear(player.x+direction.x,player.z))player.x+=direction.x;if(clear(player.x,player.z+direction.z))player.z+=direction.z;}
@@ -137,16 +144,29 @@ function update(dt:number){
     const [top,bottom]=Array.from($('blink').children).map(lid=>lid.getBoundingClientRect());
     eyesClosed=top.top<=0&&top.bottom>=innerHeight/2&&bottom.top<=innerHeight/2&&bottom.bottom>=innerHeight;
   }
-  let nearest=30;
+  sound.listener(player.x,player.z,forward.x,forward.z);
   for(let i=0;i<angels.length;i++){
     const a=angels[i];if(i===0&&a.seen&&elapsed>14)a.active=true;
     if(i===1&&powered&&!secondIntro&&player.z>0){secondIntro=true;a.active=true;subtitle('There were only two statues at the altar. Where is the other one?',6);}
     const oldX=a.group.position.x,oldZ=a.group.position.z;
-    if(grace<=0&&a.update(dt,camera,eyesClosed,sound,hasKey?4.2:3.2)){caught(a);break;}
+    if(a.update(dt,camera,eyesClosed,sound,hasKey?4.2:3.2,grace<=0)){caught(a);break;}
     if(world&&(a.group.position.x!==oldX||a.group.position.z!==oldZ))world.moon.shadow.needsUpdate=true;
-    if(a.active)nearest=Math.min(nearest,a.group.position.distanceTo(player));
   }
-  const tension=THREE.MathUtils.clamp(1-nearest/8,0,1);film.uniforms.stress.value=tension;sound.tension(tension);sound.listener(player.x,player.z,forward.x,forward.z);
+  if(mode==='playing'){
+    const events=horror.update(dt,{angels:angels.map(a=>({x:a.group.position.x,z:a.group.position.z,pose:a.pose,observed:a.observed,active:a.active,distance:a.group.position.distanceTo(player)})),running:moving&&running,inNave:Math.abs(player.x)<7&&player.z<6,powered,lightOn});
+    for(const event of events){
+      if(event==='realization')sound.realize();
+      if(event==='warning'){sound.warning();grace=Math.max(grace,8.5);}
+      if(event==='dark'&&!lightOn)subtitle('My flashlight.',3);
+    }
+    world?.candleLights.forEach((light,i)=>{
+      if(horror.blackout>0&&!snuffed.has(i)&&candleStrength(light.position.z,horror.blackout)<.3){sound.snuff(light.position.x,light.position.z);snuffed.add(i);}
+    });
+    sound.update({fear:horror.fear,aware:horror.aware,blackout:horror.blackout,running:moving&&running});
+  }
+  film.uniforms.stress.value=horror.fear;
+  show('light-prompt',mode==='playing'&&horror.blackout>.55&&!lightOn);
+  $('light-prompt-label').textContent=torchDrawn?'SWITCH ON FLASHLIGHT':'TAKE OUT FLASHLIGHT';
   if(mode==='playing')interaction(dt);
   $('location').textContent=player.x>8?'THE SACRISTY':player.x< -8?'THE ARCHIVE':player.z< -9?'THE SANCTUARY':'SAINT ORISON’S CHAPEL';
   if(subtitleTimer>0){subtitleTimer-=dt;if(subtitleTimer<=0)$('subtitle').style.opacity='0';}
@@ -154,22 +174,32 @@ function update(dt:number){
 function frame(now:number){
   requestAnimationFrame(frame);const raw=(now-lastTime)/1000;lastTime=now;const dt=Math.min(raw,.05);frameMs=frameMs*.96+Math.min(raw*1000,100)*.04;const t=now*.001;
   if(mode==='playing'&&raw<.4)update(dt);
-  if(mode==='caught'){caughtTime-=dt;if(caughtTime<=0)finish(false);}
+  if(mode==='caught'){
+    // Capture stops gameplay updates, but the eyelids must still reopen.
+    if(blinkTime>0){blinkTime=Math.max(0,blinkTime-dt);if(blinkTime===0)$('blink').classList.remove('closed');}
+    caughtTime-=dt;if(caughtTime<=0)finish(false);
+  }
   if(mode==='menu'){
     camera.position.set(-2.0+menuMouse.x*.10,1.6+menuMouse.y*.04,-5.2);camera.lookAt(-2.0,2.05,-12);film.uniforms.stress.value=0;
   }
-  camera.getWorldDirection(forward);flashlight.position.copy(camera.position).add(new THREE.Vector3(.1,-.13,.05));flashlight.target.position.copy(camera.position).addScaledVector(forward,12);flashlight.visible=(mode==='playing'||mode==='caught')&&lightOn;
-  fill.position.copy(camera.position);fill.intensity=mode==='menu'?.2:.55;
-  if(world)world.update(t,powered);film.uniforms.time.value=t%1000;
+  camera.getWorldDirection(forward);
+  const playingView=mode==='playing'||mode==='caught';
+  const beam=torch.update(mode==='paused'?0:dt,playingView&&lightOn,elapsed,walking,horror.fear);
+  flashlight.position.copy(camera.position).add(new THREE.Vector3(.27,-.25,-.68).applyQuaternion(camera.quaternion));flashlight.target.position.copy(camera.position).addScaledVector(forward,12);
+  // Stable light/shadow counts avoid a shader compilation hitch on the first draw.
+  flashlight.intensity=playingView&&lightOn?24*beam:0;flashlight.shadow.needsUpdate=flashlight.intensity>.01;
+  fill.position.copy(camera.position);fill.intensity=mode==='menu'?.2:THREE.MathUtils.lerp(.28,.018,horror.blackout);
+  if(world)world.update(mode==='menu'?t:elapsed,powered,horror.blackout);film.uniforms.time.value=t%1000;
   renderer.info.reset();composer.render();
 }
 requestAnimationFrame(frame);
 async function init(){
   try{
+    void sound.preload();
     $('loading-bar').style.width='15%';
     world=await makeWorld(scene,label=>{$('begin-label').textContent=label.toUpperCase();});$('loading-bar').style.width='65%';
     $('begin-label').textContent='AWAKENING THE ANGELS';angels=await loadAngels(scene);$('loading-bar').style.width='100%';
-    world.moon.shadow.needsUpdate=true;camera.updateMatrixWorld();await renderer.compileAsync(scene,camera);
+    world.moon.shadow.needsUpdate=true;camera.updateMatrixWorld();torch.group.visible=true;await renderer.compileAsync(scene,camera);torch.group.visible=false;
     ready=true;$<HTMLButtonElement>('begin').disabled=false;$('begin-label').textContent='ENTER THE CHAPEL';
     if(matchMedia('(pointer:coarse)').matches)show('mobile-warning',true);
   }catch(error){console.error(error);$('begin-label').textContent='RELOAD TO TRY AGAIN';$<HTMLButtonElement>('begin').disabled=false;$('begin').onclick=()=>location.reload();notice('An asset could not load. Reload to retry.');}
@@ -178,7 +208,7 @@ void init();
 // Local development instrumentation supports reproducible visibility, collision and completion tests.
 if(import.meta.env.DEV){
   (window as any).__game={
-    snapshot:()=>({ready,mode,powered,hasKey,stage,readNote,elapsed,blinkCount,eye,player:player.toArray(),yaw,pitch,fps:Math.round(1000/frameMs),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,angels:angels.map(a=>({position:a.group.position.toArray(),active:a.active,observed:a.observed,pose:a.pose,bones:a.bones.map(b=>b.name)}))}),
+    snapshot:()=>({ready,mode,powered,hasKey,stage,readNote,elapsed,blinkCount,eye,lightOn,torchDrawn,horror:{aware:horror.aware,fear:horror.fear,phase:horror.phase,blackout:horror.blackout,bpm:horror.bpm},audio:sound.snapshot(),player:player.toArray(),yaw,pitch,fps:Math.round(1000/frameMs),drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,angels:angels.map(a=>({position:a.group.position.toArray(),active:a.active,observed:a.observed,pose:a.pose,bones:a.bones.map(b=>b.name)}))}),
     teleport:(x:number,z:number,angle=0,p=0)=>{player.set(x,1.68,z);yaw=angle;pitch=p;camera.position.copy(player);camera.rotation.set(p,yaw,0,'YXZ');camera.updateMatrixWorld();},
     start:()=>start(),pause,resume,blink,
     observe:(index:number,active:boolean)=>{angels[index].active=active;},

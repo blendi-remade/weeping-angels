@@ -18,7 +18,7 @@ Open **http://127.0.0.1:4187/** with a keyboard and mouse. Headphones make the p
 | Shift | Run |
 | E, held where indicated | Interact |
 | Space | Blink deliberately |
-| F | Toggle flashlight |
+| F | Draw / toggle flashlight |
 | Escape | Pause and release the mouse |
 | H | Hide the interface for captures |
 
@@ -30,6 +30,8 @@ Enter through the iron gate and move through the nave. The sacristy is on the ri
 
 The angels respect solid cover, partial visibility, peripheral vision, and visible floor reflections. They navigate around walls and furniture. Statue pose changes only occur outside observation. The second angel and increased pursuit speed make the return journey more dangerous.
 
+The first witnessed change in an angel starts a restrained heartbeat and breathing response. Fear rises with what the player sees and fades slowly after looking away. In the nave, a single gust extinguishes the candles from the sanctuary toward the entrance. Draw the flashlight with F; restoring power brings up the service lights. Darkness never relaxes the observation rule: a visible silhouette still freezes the entire angel.
+
 ## Production
 
 | Asset | Production path |
@@ -37,12 +39,13 @@ The angels respect solid cover, partial visibility, peripheral vision, and visib
 | Angel | Nano Banana 2 reference → Meshy v7 Ultra/PBR with humanoid rig → Blender weight corrections and authored poses → GLB with shared morph targets |
 | Carved pew | Nano Banana 2 reference → Meshy v7 Ultra/PBR → bounded-error simplification and instancing |
 | Stone, floor, oak | PATINA base color, normal, and roughness maps |
-| Chapel ambience, stone movement, gate | ElevenLabs Sound Effects v2 through fal |
+| Chapel ambience, stone movement, breathing, candle snuff, flashlight draw, gate | ElevenLabs Sound Effects v2 through fal; positional playback, occlusion filtering, room reverb, and normalized levels |
+| Adaptive heartbeat | Synthesized two-part pulse, paced by witnessed danger and recovery |
 | Architecture and gameplay | TypeScript / Three.js; authored modular geometry, collision, navigation, observation, lighting, spatial audio, and interaction |
 
 Blender fixes the auto-rig's wing weights and replaces its emissive preview material with the original PBR material. The four statue states share the same geometry and texture layout. Meshopt and WebP compression reduce the runtime model payloads; detailed source assets remain available for revision.
 
-Production scripts read `FAL_KEY` from `.env.local` or the process environment. On this workstation they can also reuse the sibling WorldClaw project's local configuration without copying or exposing the key.
+Production scripts read `FAL_KEY` from `.env.local` or the process environment. Set `FAL_ENV_FILE` to reuse another local environment file without copying its credentials into this repository.
 
 ```powershell
 node scripts/generate-assets.mjs reference
@@ -51,6 +54,7 @@ node scripts/generate-assets.mjs materials
 node scripts/generate-assets.mjs pew-reference
 node scripts/generate-assets.mjs pew-mesh
 node scripts/generate-assets.mjs audio
+node scripts/generate-assets.mjs horror-audio
 python scripts/optimize-textures.py
 # Run scripts/pose-angel.py with Blender's --background --python flags.
 node scripts/optimize-models.mjs

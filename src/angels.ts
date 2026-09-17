@@ -9,6 +9,7 @@ import { isObserved } from './visibility';
 export { isObserved } from './visibility';
 
 export class Angel {
+  private static nextAudioId=0;private audioId=Angel.nextAudioId++;
   group=new THREE.Group();active=false;seen=false;observed=false;pose=0;path:Point[]=[];pathTimer=0;stepTimer=0;rest=new Map<THREE.Bone,THREE.Quaternion>();bones:THREE.Bone[]=[];lastObserved=true;
   private localObservationBounds=new THREE.Box3();
   constructor(model:THREE.Object3D,scene:THREE.Scene,public start:THREE.Vector3){
@@ -48,13 +49,13 @@ export class Angel {
       if(/head/.test(n)&&!/end/.test(n)){b.rotateX(pose===0?.12:pose===2?-.1:0);b.rotateZ(pose===1?.08:0);}
     }
   }
-  update(dt:number,camera:THREE.PerspectiveCamera,eyesClosed:boolean,sound:Soundscape,speed:number){
+  update(dt:number,camera:THREE.PerspectiveCamera,eyesClosed:boolean,sound:Soundscape,speed:number,allowMovement=true){
     const bounds=this.observationBounds();
     const visible=isObserved(camera,bounds,eyesClosed,sightBlockers);this.observed=visible;
     const dist=Math.hypot(this.group.position.x-camera.position.x,this.group.position.z-camera.position.z);
     if(visible)this.seen=true;
     if(visible&&!this.lastObserved&&dist<5&&this.active)sound.reveal();this.lastObserved=visible;
-    if(!this.active||visible)return false;
+    if(!this.active||visible||!allowMovement){sound.stopScrape?.(this.audioId);return false;}
     this.pathTimer-=dt;
     if(this.pathTimer<=0){this.path=pathfind(this.group.position,camera.position);this.pathTimer=.65;}
     if(this.path.length){
@@ -68,7 +69,7 @@ export class Angel {
         if(canStand(nx,nz,.31)&&!isObserved(camera,swept,eyesClosed,sightBlockers)){
           this.group.position.copy(next);this.group.rotation.y=Math.atan2(camera.position.x-nx,camera.position.z-nz);
           this.setPose(dist<1.8?3:dist<4?2:1);this.stepTimer-=dt;
-          if(this.stepTimer<=0){sound.scrape(nx,nz);this.stepTimer=.8;}
+          if(this.stepTimer<=0){sound.scrape(nx,nz,this.audioId);this.stepTimer=1.1;}
         }
       }
     }

@@ -16,6 +16,15 @@ function statue(width=2.7,depth=.5){
 }
 const silent={scrape(){},reveal(){}} as unknown as Soundscape;
 
+test('blackout grace keeps observation current while freezing unseen movement',()=>{
+  const camera=view(),angel=statue();angel.active=true;
+  angel.update(.05,camera,false,silent,4.2,false);assert(angel.observed);
+  camera.lookAt(0,1.68,8);camera.updateMatrixWorld();
+  for(let i=0;i<60;i++)angel.update(.05,camera,false,silent,4.2,false);
+  assert.equal(angel.observed,false);assert.deepEqual(angel.group.position.toArray(),[0,0,0]);
+  assert.equal(angel.pose,0);assert.equal(angel.group.rotation.y,0);
+});
+
 test('a wing sliver beside a column freezes the entire angel',()=>{
   const camera=view(),angel=statue();angel.active=true;
   // This column hides all seven points used by the old visibility check.

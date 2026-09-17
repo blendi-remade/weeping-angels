@@ -4,6 +4,7 @@ import { Reflector } from 'three/addons/objects/Reflector.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { createPowerCabinet } from './power-cabinet';
+import { candleStrength } from './horror';
 
 export type Obstacle = { x:number; z:number; w:number; d:number; h:number };
 export type Station = { id:'power'|'key'|'gate'|'note'; position:THREE.Vector3; object:THREE.Group; label:string };
@@ -227,9 +228,10 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   }
   for(let i=0;i<26;i++){const z=-14+rng()*28,x=(rng()-.5)*14;if(Math.abs(x)<1.3)continue;box(.15+rng()*.2,.004,.2+rng()*.2,x,.01,z,rng()>.5?wood:darkStone,false,rng()*6);}
   // Candles: shared flame geometry with animated shader; a few lights do the illumination.
-  const flameMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:{time:{value:0}},vertexShader:`varying vec2 vUv; uniform float time; void main(){vUv=uv;vec3 p=position;p.x+=sin(time*8.+position.y*18.)*.009*uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vUv;void main(){vec2 p=(vUv-.5)*2.;float a=pow(max(0.,1.-length(vec2(p.x*1.8,p.y))),2.);vec3 c=mix(vec3(1.,.15,.01),vec3(1.,.85,.4),a);gl_FragColor=vec4(c*2.,a);}`});
-  const fireGeometries:THREE.BufferGeometry[]=[];const candleLights:THREE.PointLight[]=[];
+  const flameMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:{time:{value:0},blackout:{value:0}},vertexShader:`varying vec2 vUv; varying float vZ; uniform float time; void main(){vUv=uv;vZ=position.z;vec3 p=position;p.x+=sin(time*8.+position.y*18.)*.009*uv.y;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,fragmentShader:`varying vec2 vUv; varying float vZ; uniform float blackout; void main(){vec2 p=(vUv-.5)*2.;float a=pow(max(0.,1.-length(vec2(p.x*1.8,p.y))),2.);vec3 c=mix(vec3(1.,.15,.01),vec3(1.,.85,.4),a);float threshold=.08+clamp((vZ+14.)/26.,0.,1.)*.68;float strength=1.-smoothstep(threshold,threshold+.16,blackout);gl_FragColor=vec4(c*2.,a*strength);}`});
+  const fireGeometries:THREE.BufferGeometry[]=[];const candleLights:THREE.PointLight[]=[];const candleLocations:THREE.Vector3[]=[];
   function candle(x:number,y:number,z:number,height=.22){
+    candleLocations.push(new THREE.Vector3(x,y+height+.035,z));
     cylinder(.038,.034,height,x,y+height/2,z,wax,8);cylinder(.007,.007,.025,x,y+height+.012,z,black,6);
     const g=new THREE.PlaneGeometry(.13,.23);g.translate(x,y+height+.09,z);fireGeometries.push(g);const g2=g.clone();g2.translate(-x,-y-height-.09,-z);g2.rotateY(Math.PI/2);g2.translate(x,y+height+.09,z);fireGeometries.push(g2);
   }
@@ -249,6 +251,10 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   cylinder(.045,.045,.055,12,1.3975,-10.27,metal,16);
   for(const [x,y,z] of [[12,1.415,-10.27],[-12,1,7],[6.8,1,10.7]]){candle(x,y,z,.32);const l=new THREE.PointLight(0xffc07e,9,6,2);l.position.set(x,y+.5,z);scene.add(l);candleLights.push(l);}
   const fire=new THREE.Mesh(mergeGeometries(fireGeometries),flameMaterial);scene.add(fire);
+  const smokeGeometry=new THREE.BufferGeometry();smokeGeometry.setAttribute('position',new THREE.Float32BufferAttribute(candleLocations.flatMap(p=>p.toArray()),3));
+  const extinguished=new Float32Array(candleLocations.length).fill(1e6);smokeGeometry.setAttribute('extinguished',new THREE.BufferAttribute(extinguished,1));
+  const smokeMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{time:{value:0}},vertexShader:`attribute float extinguished; uniform float time; varying float vAge; void main(){vAge=time-extinguished;vec3 p=position;float age=max(0.,vAge);p.y+=age*.13;p.x+=sin(age*2.3+position.z)*age*.035;vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp((38.+age*24.)/-mv.z,1.,60.);}`,fragmentShader:`varying float vAge;void main(){if(vAge<0.||vAge>5.)discard;vec2 p=(gl_PointCoord-.5)*2.;float shape=pow(max(0.,1.-dot(p,p)),2.);gl_FragColor=vec4(.38,.42,.43,shape*.16*exp(-vAge*.8)*smoothstep(0.,.15,vAge));}`});
+  const smoke=new THREE.Points(smokeGeometry,smokeMaterial);smoke.frustumCulled=false;scene.add(smoke);
   // Hanging sanctuary banners and iron chandeliers break up the repeated bays.
   const fabric=new THREE.MeshStandardMaterial({color:0x35282a,roughness:1,side:THREE.DoubleSide});
   for(const side of [-1,1]){
@@ -271,15 +277,23 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
   const dustPositions=new Float32Array(600*3);for(let i=0;i<600;i++){dustPositions[i*3]=(rng()-.5)*15;dustPositions[i*3+1]=rng()*8;dustPositions[i*3+2]=(rng()-.5)*30;}
   const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dustPositions,3));
   const dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xb3c9cf,size:.017,transparent:true,opacity:.35,depthWrite:false}));scene.add(dust);
-  const beamMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:{time:{value:0}},vertexShader:`varying vec2 vUv;varying vec3 vWorld;void main(){vUv=uv;vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec2 vUv; varying vec3 vWorld; uniform float time;void main(){float edge=pow(sin(vUv.x*3.14159),2.);float vertical=sin(vUv.y*3.14159);float dust=.8+.2*sin(vWorld.x*14.+vWorld.y*5.+time*.14);gl_FragColor=vec4(.29,.43,.52,edge*vertical*dust*.075);}`});
+  const beamMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:{time:{value:0},strength:{value:1}},vertexShader:`varying vec2 vUv;varying vec3 vWorld;void main(){vUv=uv;vWorld=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`varying vec2 vUv; varying vec3 vWorld; uniform float time;uniform float strength;void main(){float edge=pow(sin(vUv.x*3.14159),2.);float vertical=sin(vUv.y*3.14159);float dust=.8+.2*sin(vWorld.x*14.+vWorld.y*5.+time*.14);gl_FragColor=vec4(.29,.43,.52,edge*vertical*dust*.075*strength);}`});
+  const moonShafts:THREE.SpotLight[]=[];
   for(const z of [-11,-1,10]){
     const g=new THREE.PlaneGeometry(1.8,10);const beam=new THREE.Mesh(g,beamMaterial);beam.position.set(3.1,3.9,z);beam.rotation.z=-.8;scene.add(beam);
-    const l=new THREE.SpotLight(0x9ac0de,65,22,.22,.8,1.8);l.position.set(7.4,5.1,z);l.target.position.set(-2,.1,z-1.5);scene.add(l,l.target);
+    const l=new THREE.SpotLight(0x9ac0de,65,22,.22,.8,1.8);l.position.set(7.4,5.1,z);l.target.position.set(-2,.1,z-1.5);scene.add(l,l.target);moonShafts.push(l);
   }
   const moon=new THREE.SpotLight(0xadc5df,135,30,.43,.8,1.6);moon.position.set(0,8,-14.8);moon.target.position.set(0,0,-5);moon.castShadow=true;moon.shadow.mapSize.set(1024,1024);moon.shadow.bias=-.0004;moon.shadow.normalBias=.025;scene.add(moon,moon.target);
   moon.shadow.autoUpdate=false;moon.shadow.needsUpdate=true;
   const ambient=new THREE.HemisphereLight(0x8ca5bf,0x33312a,.52);scene.add(ambient);
   const angelRim=new THREE.SpotLight(0x91b4d2,35,15,.6,.9,1.8);angelRim.position.set(2,6,-4);angelRim.target.position.set(0,1.4,-9);scene.add(angelRim,angelRim.target);
+  const emergencyLights:THREE.PointLight[]=[];
+  const bulbMaterial=new THREE.MeshStandardMaterial({color:0xaeb8ad,emissive:0xc2d6c4,emissiveIntensity:0,roughness:.35});
+  for(const [x,z]of [[7.35,-7],[-7.35,7]]){
+    box(.12,.27,.34,x,3.25,z,metal);box(.14,.12,.24,x-Math.sign(x)*.06,3.23,z,bulbMaterial);
+    for(const zz of [-.08,0,.08])box(.17,.15,.012,x-Math.sign(x)*.07,3.23,z+zz,metal);
+    const light=new THREE.PointLight(0xc4d8c9,0,7,2);light.position.set(x-Math.sign(x)*.3,3.12,z);scene.add(light);emergencyLights.push(light);
+  }
   // Lightly reflective damp floor. Reflection is deliberately restrained, not polished marble.
   const reflection=new Reflector(new THREE.PlaneGeometry(15.4,31.4),{textureWidth:512,textureHeight:512,color:0x7d8a8c,clipBias:.003,multisample:0});
   reflection.rotation.x=-Math.PI/2;reflection.position.y=.006;
@@ -294,9 +308,25 @@ export async function makeWorld(scene:THREE.Scene,onProgress:(label:string)=>voi
     for(const o of [...group.children]){const m=o as THREE.Mesh;if(!m.isMesh||Array.isArray(m.material))continue;m.updateMatrix();if(!groups.has(m.material))groups.set(m.material,[]);groups.get(m.material)!.push(m.geometry.clone().applyMatrix4(m.matrix));group.remove(m);m.geometry.dispose();}
     for(const [mat,parts]of groups){const merged=new THREE.Mesh(mergeGeometries(parts),mat);merged.castShadow=true;merged.receiveShadow=true;group.add(merged);parts.forEach(g=>g.dispose());}
   }
-  return {stations,reflection,moon,ambient,update(time:number,powered:boolean){
-    flameMaterial.uniforms.time.value=time;beamMaterial.uniforms.time.value=time;
-    candleLights.forEach((l,i)=>l.intensity=(i===8?15:10)*(1+Math.sin(time*5+i*7)*.06+Math.sin(time*11+i)*.025));
+  let emergencyLevel=0,lastTime=0;
+  return {stations,reflection,moon,ambient,candleLights,update(time:number,powered:boolean,blackout=0){
+    flameMaterial.uniforms.time.value=time;flameMaterial.uniforms.blackout.value=blackout;beamMaterial.uniforms.time.value=time;smokeMaterial.uniforms.time.value=time;
+    candleLights.forEach((l,i)=>l.intensity=candleStrength(l.position.z,blackout)*(i===8?15:10)*(1+Math.sin(time*5+i*7)*.06+Math.sin(time*11+i)*.025));
+    let smokeChanged=false;candleLocations.forEach((p,i)=>{
+      if(blackout===0&&extinguished[i]!==1e6){extinguished[i]=1e6;smokeChanged=true;}
+      else if(blackout>0&&extinguished[i]===1e6&&candleStrength(p.z,blackout)<.08){extinguished[i]=time;smokeChanged=true;}
+    });if(smokeChanged)smokeGeometry.attributes.extinguished.needsUpdate=true;
+    const darkness=THREE.MathUtils.smoothstep(blackout,0,.8);
+    if(time<lastTime)emergencyLevel=powered?1:0;
+    emergencyLevel=THREE.MathUtils.damp(emergencyLevel,powered?1:0,2.5,Math.min(.05,Math.max(0,time-lastTime)));lastTime=time;
+    ambient.intensity=THREE.MathUtils.lerp(.52,.022,darkness)+emergencyLevel*.025;
+    moon.intensity=THREE.MathUtils.lerp(135,14,darkness);angelRim.intensity=THREE.MathUtils.lerp(35,3,darkness);
+    moonShafts.forEach(l=>l.intensity=THREE.MathUtils.lerp(65,4,darkness));
+    windowMat.emissiveIntensity=THREE.MathUtils.lerp(.6,.055,darkness);gm.emissiveIntensity=THREE.MathUtils.lerp(1.4,.16,darkness);
+    beamMaterial.uniforms.strength.value=1-darkness;
+    dust.material.opacity=THREE.MathUtils.lerp(.35,.035,darkness);
+    scene.environmentIntensity=THREE.MathUtils.lerp(.075,.005,darkness);
+    emergencyLights.forEach(l=>l.intensity=emergencyLevel*10);bulbMaterial.emissiveIntensity=emergencyLevel*1.4;
     dust.rotation.y=Math.sin(time*.025)*.02;dust.position.y=Math.sin(time*.06)*.08;
     cabinet.setPowered(powered);
     key.rotation.y=time*.25;

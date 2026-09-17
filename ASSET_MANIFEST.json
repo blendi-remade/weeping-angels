@@ -1,5 +1,5 @@
 {
-  "runtimeBytes": 17648737,
+  "runtimeBytes": 18191301,
   "runtime": [
     {
       "file": "public/assets/angel-game.glb",
@@ -7,9 +7,29 @@
       "sha256": "c1bfb19ae1e482d57ec51eb386080f6cd2a5965258e0e19117d56d2d613cd076"
     },
     {
+      "file": "public/assets/breath-calm.mp3",
+      "bytes": 193768,
+      "sha256": "deb0293bffcb9712380a008895fe14634a747bbd1dfe93a3c2a4ec12b23fe836"
+    },
+    {
+      "file": "public/assets/breath-strained.mp3",
+      "bytes": 193768,
+      "sha256": "e7a25f24e61b50092ee690dcc5a946d1bba2a157858222e223285e1eb82f4b1b"
+    },
+    {
+      "file": "public/assets/candle-snuff.mp3",
+      "bytes": 34525,
+      "sha256": "7cc2726eca63484db5574b378d9c9302e7b9a99170f5cbc6da2836654306a9c3"
+    },
+    {
       "file": "public/assets/chapel-ambience.mp3",
       "bytes": 529807,
       "sha256": "6d319aa49bd81dedd10d8a13d3c5df61eba3f39f0a1139a9c128b0b0f1f4683b"
+    },
+    {
+      "file": "public/assets/flashlight-draw.mp3",
+      "bytes": 27629,
+      "sha256": "eeb7519a9a6d364afd7dafeba3136bd5cc66dcc7759e963338d4a475cb40e46e"
     },
     {
       "file": "public/assets/floor-basecolor.webp",
@@ -57,6 +77,16 @@
       "sha256": "4130a79260f37385485ed51007da0d2380be228732b0d2d6714aa6c2f8e9cd89"
     },
     {
+      "file": "public/assets/stone-shift-a.mp3",
+      "bytes": 46437,
+      "sha256": "986990e04b72b3158422c809845a10bd5040a242cd77d168262aa729be98b872"
+    },
+    {
+      "file": "public/assets/stone-shift-b.mp3",
+      "bytes": 46437,
+      "sha256": "9747a49b9d7c0b61bfb2827d45d4fe75769803afb60c39cb0f671fb772356c15"
+    },
+    {
       "file": "public/assets/wood-basecolor.webp",
       "bytes": 1593186,
       "sha256": "32951e0006bc8ba97fefbf6b53088ff185ad045e58a067a9853602f72f84a94b"
@@ -84,9 +114,29 @@
       "requestId": "01a0a7a4-c487-72f0-b4ab-8599f99d72d5"
     },
     {
+      "record": "assets/source/breath-calm.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b6d-7e90-a500-30147150cc5b"
+    },
+    {
+      "record": "assets/source/breath-strained.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b6f-7c20-a936-37e553aa7328"
+    },
+    {
+      "record": "assets/source/candle-snuff.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b6c-7ff1-91f7-924a1d4b0070"
+    },
+    {
       "record": "assets/source/chapel-ambience.job.json",
       "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
       "requestId": "01a0a7c1-916c-7912-a235-8dca48999cbb"
+    },
+    {
+      "record": "assets/source/flashlight-draw.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b72-7221-9cd6-866a8c2018e3"
     },
     {
       "record": "assets/source/floor.job.json",
@@ -117,6 +167,21 @@
       "record": "assets/source/stone-scrape.job.json",
       "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
       "requestId": "01a0a7c1-9170-7e73-b4f2-b83f24f96788"
+    },
+    {
+      "record": "assets/source/stone-shift-a-v2.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0aca1-6cc6-7303-9f01-6a07d7195f5e"
+    },
+    {
+      "record": "assets/source/stone-shift-a.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b67-7630-b070-def8a16efe26"
+    },
+    {
+      "record": "assets/source/stone-shift-b.job.json",
+      "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+      "requestId": "01a0ac9e-4b6f-7fb0-8fcd-8697551a0cf5"
     },
     {
       "record": "assets/source/wood.job.json",

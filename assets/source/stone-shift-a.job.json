@@ -1,0 +1,18 @@
+{
+  "endpoint": "fal-ai/elevenlabs/sound-effects/v2",
+  "input": {
+    "text": "One massive rough limestone statue dragging itself a single short step over gritty flagstone. Very heavy low stone grinding, tiny brittle grains crunching, then a weighty blunt settling thud. Menacing physical weight. Detailed close dry foley with clear quiet beginning and end. Exactly one movement, no voices, no music, no metallic sounds, no explosion, no reverb.",
+    "duration_seconds": 1.6,
+    "loop": false,
+    "prompt_influence": 0.55,
+    "output_format": "mp3_44100_192"
+  },
+  "status": "IN_QUEUE",
+  "request_id": "01a0ac9e-4b67-7630-b070-def8a16efe26",
+  "response_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b67-7630-b070-def8a16efe26",
+  "status_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b67-7630-b070-def8a16efe26/status",
+  "cancel_url": "https://queue.fal.run/fal-ai/elevenlabs/requests/01a0ac9e-4b67-7630-b070-def8a16efe26/cancel",
+  "logs": null,
+  "metrics": {},
+  "queue_position": 0
+}
