@@ -24,7 +24,7 @@ The opening reaches full darkness about **10 seconds into active gameplay**. A f
 
 There is also a short escape objective: restore the electrical supply in the sacristy, collect the gate key in the archive, and return to the entrance. The blackout trips any power restored before it; restoring the supply afterward brings back the service lights. Pausing or switching tabs freezes gameplay.
 
-This is an experimental desktop demo. Close-range capture still needs tuning; further encounter and progression work is planned.
+This is an experimental desktop demo. Further encounter and progression work is planned.
 
 ## Stack at a glance
 
@@ -71,7 +71,7 @@ GPT-6-Astra is a development credit. Players do not need an OpenAI account, and 
 ## How Three.js brings it together
 
 - **World:** modular stone architecture is constructed in code. Static geometry is merged by material, pews are instanced, and optimized GLBs supply the sculptural detail.
-- **Observation:** conservative bounds contain every authored statue pose. The camera frustum, opaque cover and floor reflection checks decide whether any part might be visible. Uncertainty keeps an angel still.
+- **Observation:** bounds contain the statue's current pose and facing direction. Before a step, the proposed pose and the space between both positions are checked too. The camera frustum, opaque cover and floor reflections decide whether any part might be visible. Uncertainty keeps an angel still.
 - **Darkness:** light volumes distinguish a hidden statue from one revealed by the flashlight or a lit background. A flashlight keypress freezes a potentially visible statue before the draw animation finishes.
 - **Movement:** grid navigation routes around walls and furniture. Swept separation checks prevent one angel from passing through another. Visibility is also checked across a proposed step.
 - **Presentation:** a shadow-casting flashlight, animated candles, stained glass, a subtle floor reflection, bloom, grain and vignette establish the chapel's look.
